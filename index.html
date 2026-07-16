@@ -1664,9 +1664,12 @@
         }
 
         function render() {
+            renderFilters();
+            
             calculateStats();
-            const container = document.getElementById('goods-container'); container.innerHTML = '';
-
+            const container = document.getElementById('goods-container'); 
+            container.innerHTML = '';
+            
             let filteredList = goodsList.filter(item => {
                 let statusMatch = currentStatusFilter === 'all' ? true : (currentStatusFilter === 'ongoing' ? item.status !== '完成' : item.status === currentStatusFilter);
                 let ipMatch = currentIPFilter === 'all' ? true : (Array.isArray(item.ip) ? item.ip.includes(currentIPFilter) : item.ip === currentIPFilter);
