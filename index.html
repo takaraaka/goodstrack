@@ -1663,12 +1663,71 @@
             document.getElementById('total-balance').innerText = `¥${balTotalRMB}`;
         }
 
-        function render() {
-            renderFilters();
+                function render() {
+            // ================= 1. 即時重新計算所有計數 (Filters Count) =================
+            let totalOngoing = 0;
+            let totalAll = goodsList.length;
+            let statusCounts = { '待出貨': 0, '出貨': 0, '到貨': 0, '完成': 0 };
             
+            let ipCounts = {};
+            ipSettings.forEach(ip => ipCounts[ip.id] = 0);
+            ipCounts['OTHERS'] = 0;
+
+            goodsList.forEach(item => {
+                if (item.status !== '完成') totalOngoing++;
+                if (statusCounts.hasOwnProperty(item.status)) statusCounts[item.status]++;
+                
+                // IP 計數連動當前狀態
+                let matchStatus = currentStatusFilter === 'all' ? true : (currentStatusFilter === 'ongoing' ? item.status !== '完成' : item.status === currentStatusFilter);
+                if (matchStatus) {
+                    const itemIps = Array.isArray(item.ip) ? item.ip : [item.ip || 'OTHERS'];
+                    itemIps.forEach(ipId => {
+                        if (ipCounts.hasOwnProperty(ipId)) ipCounts[ipId]++;
+                        else ipCounts['OTHERS']++;
+                    });
+                }
+            });
+
+            // ================= 2. 渲染狀態 Filters (0件自動隱藏) =================
+            const statusContainer = document.getElementById('status-filters');
+            let statusHTML = '';
+            
+            // 進行中 & 全部 永遠顯示
+            statusHTML += `<button class="filter-btn ${currentStatusFilter === 'ongoing' ? 'active' : ''}" onclick="filterStatus('ongoing', event)">進行中 (${totalOngoing})</button>`;
+            statusHTML += `<button class="filter-btn ${currentStatusFilter === 'all' ? 'active' : ''}" onclick="filterStatus('all', event)">全部 (${totalAll})</button>`;
+            
+            // 其他狀態大於 0 或者正被選中才顯示
+            ['待出貨', '出貨', '到貨', '完成'].forEach(st => {
+                let c = statusCounts[st] || 0;
+                if (c > 0 || currentStatusFilter === st) {
+                    statusHTML += `<button class="filter-btn ${currentStatusFilter === st ? 'active' : ''}" onclick="filterStatus('${st}', event)">${st} (${c})</button>`;
+                }
+            });
+            statusContainer.innerHTML = statusHTML;
+
+            // ================= 3. 渲染 IP Filters (0件自動隱藏) =================
+            const filterContainer = document.getElementById('ip-filters');
+            let currentStatusTotal = currentStatusFilter === 'all' ? totalAll : (currentStatusFilter === 'ongoing' ? totalOngoing : statusCounts[currentStatusFilter]);
+            
+            let ipHTML = `<button class="filter-btn ${currentIPFilter === 'all' ? 'active' : ''}" onclick="filterIP('all', event)">全部 (${currentStatusTotal})</button>`;
+            
+            ipSettings.forEach(ip => {
+                let count = ipCounts[ip.id] || 0;
+                if (count > 0 || currentIPFilter === ip.id) {
+                    const iconImg = ip.pic ? `<img src="${ip.pic}" class="square-badge-icon" style="margin-right:4px;">` : '';
+                    const countDisplay = count > 0 ? `(${count})` : '';
+                    ipHTML += `<button class="filter-btn ${currentIPFilter === ip.id ? 'active' : ''}" onclick="filterIP('${ip.id}', event)">${iconImg}${ip.name}${countDisplay}</button>`;
+                }
+            });
+            filterContainer.innerHTML = ipHTML;
+
+            // ================= 4. 原本的列表渲染代碼 (保持不變) =================
             calculateStats();
             const container = document.getElementById('goods-container'); 
             container.innerHTML = '';
+            
+            // ... 你原本 render() 函數底下的所有代碼 (filteredList.filter, sort, forEach 等) ...
+
             
             let filteredList = goodsList.filter(item => {
                 let statusMatch = currentStatusFilter === 'all' ? true : (currentStatusFilter === 'ongoing' ? item.status !== '完成' : item.status === currentStatusFilter);
@@ -1756,17 +1815,16 @@
             });
         }
 
-                function filterStatus(status, event) {
+        function filterStatus(status, event) {
             currentStatusFilter = status;
-            renderFilters(); // ⬅️ 確保有呢行，切換時即時重新計數
-            render();
+            render(); // ⬅️ 這裡只呼叫 render，讓 render 做龍頭
         }
 
         function filterIP(ip, event) {
             currentIPFilter = ip;
-            renderFilters(); // ⬅️ 確保有呢行，切換時即時重新計數
-            render();
+            render(); // ⬅️ 這裡只呼叫 render
         }
+
 
 
         function openModal(action, index = null) {
