@@ -945,8 +945,8 @@
 
             <div class="settings-section-title">🛒 購買平台管理</div>
             <div class="settings-list" id="platform-manager-list"></div>
-            <div class="settings-add-form">
-                <input type="hidden" id="edit-platform-id"> <!-- 隱藏的 平台 修改 ID 欄位 -->
+            <div class="settings-add-form" style="margin-bottom: 6px;">
+                <input type="hidden" id="edit-platform-id">
                 <input type="text" id="new-platform-name" placeholder="名稱 (可留空)">
                 
                 <div style="display: flex; flex-direction: column; align-items: center; gap: 2px;">
@@ -960,6 +960,10 @@
                 <input type="hidden" id="new-platform-pic">
 
                 <button class="settings-btn" id="platform-submit-btn" onclick="addNewPlatform()">＋新增平台</button>
+            </div>
+            <!-- 新增：平台管理最下方的全局還原功能 -->
+            <div style="text-align: center; padding-top: 12px; margin-bottom: 10px;">
+                <span style="font-size: 10px; color: #e24a4a; cursor: pointer; text-decoration: underline; font-weight: bold;" onclick="resetToDefaultSystem()">⚠️ 還原手帳至初始狀態</span>
             </div>
         </div>
 
@@ -1776,6 +1780,33 @@
             };
             input.click();
         }
+
+        /* 新增：徹底清空 LocalStorage 並還原系統至初始狀態 */
+        function resetToDefaultSystem() {
+            // 第一次警告
+            if (confirm('🚨 警告：確定要還原手帳嗎？\n\n這將會徹底刪除手帳上現有的所有谷子記錄、自訂IP分類、自訂平台Logo以及你之前導入過的任何JSON備份！此操作無法復原。')) {
+                
+                // 第二次嚴格確認
+                if (confirm('🔥 最後確認：你真的要清除所有數據嗎？\n（建議清除前先在外面的底部列撳「💾 備份」下載一份備份檔案以防萬一）')) {
+                    try {
+                        // 清除所有手帳相關的 LocalStorage 緩存
+                        localStorage.removeItem('goodsTrackerData');
+                        localStorage.removeItem('goodsTrackerRate');
+                        localStorage.removeItem('goodsTrackerIpSettings');
+                        localStorage.removeItem('goodsTrackerPlatformSettings');
+                        localStorage.removeItem('goodsTrackerHeaderTitle');
+                        localStorage.removeItem('goodsTrackerSortMode');
+                        
+                        alert('✨ 系統已成功還原！網頁即將自動重新整理回復初始狀態。');
+                        // 重新整理網頁，讓系統自動重新載入最乾淨的 default 預設範本
+                        window.location.reload(); 
+                    } catch(e) {
+                        alert('還原失敗：' + e.message);
+                    }
+                }
+            }
+        }
+        
     </script>
 </body>
 </html>
