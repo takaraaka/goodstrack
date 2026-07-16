@@ -1495,7 +1495,11 @@
         }
 
         function saveData() {
-            try { localStorage.setItem('goodsTrackerData', JSON.stringify(goodsList)); } catch(e){}
+            try { 
+                localStorage.setItem('goodsTrackerData', JSON.stringify(goodsList)); 
+            } catch(e) {
+                alert('⚠️ 儲存失敗：手機儲存空間已爆滿 (LocalStorage 5MB Quota Exceeded)！\n\n原因：你導入的備份檔案中含有過多或體積過大的相片，超出了手機瀏覽器的極限。\n\n解決方法：\n1. 請在電腦版刪除部分物品的相片，重新備份後再導入手機。\n2. 日後上傳相片時，盡量先將相片截圖/縮小，或使用相片壓縮工具後再上傳。');
+            }
             render();
         }
 
