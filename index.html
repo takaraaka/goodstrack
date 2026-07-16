@@ -1792,9 +1792,15 @@
                                 <span class="platform-tag">${platIconHTML}${platNameDisplay}</span>
                                 <span style="color: var(--text-light); font-size: 11px;">HKD <span class="total-cost-tag">${totalCostHKD.toFixed(2)}</span></span>
                             </div>
-                            <div class="goods-meta">
-                                <span class="meta-item">📅 ${item.date || '無日期'} 下單</span>
-                                <span class="meta-item">📦 ${item.arrived || '未註明'} 到貨</span>
+                            <div class="goods-meta" style="display: flex; flex-direction: column; gap: 4px;">
+                                <!-- 到貨日：調轉去上面，字體加粗加大 (12px) -->
+                                <span class="meta-item" style="font-size: 12px; font-weight: bold; color: var(--text-color);">
+                                    📦 ${item.arrived || '未註明'} 到貨
+                                </span>
+                                <!-- 下單日：調轉去下面，字體縮細變淡 (10px) -->
+                                <span class="meta-item" style="font-size: 10px; color: var(--text-light); background: transparent; padding-left: 2px;">
+                                    📅 ${item.date || '無日期'} 下單
+                                </span>
                             </div>
                         </div>
                     </div>
