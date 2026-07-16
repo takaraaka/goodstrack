@@ -153,9 +153,11 @@
             display: block;
         }
 
+        /* 專屬微調：將系統設定面板內的修改和刪除按鈕字體同時變細統一 */
+        .system-settings-panel .action-btn.edit,
         .system-settings-panel .action-btn.delete {
             font-size: 9px !important;
-            font-weight: normal;
+            font-weight: bold;
         }
 
         .settings-section-title {
@@ -246,6 +248,17 @@
             font-size: 11px;
             font-weight: bold;
             cursor: pointer;
+        }
+
+        /* 系統設定中 IP 與平台 Icon 的清除按鈕 */
+        .icon-clear-btn {
+            font-size: 10px;
+            color: #e24a4a;
+            cursor: pointer;
+            text-decoration: underline;
+            white-space: nowrap;
+            user-select: none;
+            display: none;
         }
 
         /* Dual-row Filters */
@@ -875,17 +888,6 @@
             min-width: 0;
             margin-bottom: 0;
         }
-        /* 系統設定中 IP 與平台 Icon 的清除按鈕 */
-        .icon-clear-btn {
-            font-size: 10px;
-            font-weight: bold;
-            color: #e24a4a;
-            cursor: pointer;
-            /*text-decoration: underline;*/
-            white-space: nowrap;
-            user-select: none;
-            display: none; /* 預設隱藏，只有選了照片時才顯示 */
-        }
     </style>
 </head>
 <body>
@@ -923,6 +925,7 @@
             <div class="settings-section-title">🎨 IP 分類及顏色管理</div>
             <div class="settings-list" id="ip-manager-list"></div>
             <div class="settings-add-form">
+                <input type="hidden" id="edit-ip-id"> <!-- 隱藏的 IP 修改 ID 欄位 -->
                 <input type="text" id="new-ip-name" placeholder="名稱 (可留空)">
                 <input type="color" id="new-ip-color" value="#ffccd5" title="標籤顏色">
                 
@@ -936,12 +939,13 @@
                 <input type="file" id="new-ip-file" accept="image/*" style="display:none;" onchange="handleIpIconUpload(event)">
                 <input type="hidden" id="new-ip-pic">
 
-                <button class="settings-btn" onclick="addNewIp()">＋新增 IP</button>
+                <button class="settings-btn" id="ip-submit-btn" onclick="addNewIp()">＋新增 IP</button>
             </div>
 
             <div class="settings-section-title">🛒 購買平台管理</div>
             <div class="settings-list" id="platform-manager-list"></div>
             <div class="settings-add-form">
+                <input type="hidden" id="edit-platform-id"> <!-- 隱藏的 平台 修改 ID 欄位 -->
                 <input type="text" id="new-platform-name" placeholder="名稱 (可留空)">
                 
                 <div style="display: flex; flex-direction: column; align-items: center; gap: 2px;">
@@ -954,7 +958,7 @@
                 <input type="file" id="new-platform-file" accept="image/*" style="display:none;" onchange="handlePlatformIconUpload(event)">
                 <input type="hidden" id="new-platform-pic">
 
-                <button class="settings-btn" onclick="addNewPlatform()">＋新增平台</button>
+                <button class="settings-btn" id="platform-submit-btn" onclick="addNewPlatform()">＋新增平台</button>
             </div>
         </div>
 
@@ -1104,7 +1108,6 @@
     </div>
 
     <script>
-        // 預設 IP 列表
         const defaultIpSettings = [
             { id: "IP1", name: "IP1", color: "#ffe3e8", textColor: "#d85c80", pic: "" },
             { id: "IP2", name: "IP2", color: "#e3f0ff", textColor: "#3b7ec4", pic: "" },
@@ -1112,7 +1115,6 @@
             { id: "OTHERS", name: "其他", color: "#ecebeb", textColor: "#5c5556", pic: "" }
         ];
 
-        // 預設平台改為物件陣列，支援儲存 pic (自訂Icon)
         const defaultPlatformSettings = [
             { id: "淘寶", name: "淘寶", pic: "" },
             { id: "閒魚", name: "閒魚", pic: "" },
@@ -1123,7 +1125,7 @@
         ];
 
         const defaultData = [
-            { item: "Item 1", ip: ["IP1"], status: "待出貨", date: "2026-06-01", arrived: "2026年7月", paid: 100, currency: "HKD", balance: 180, fullpaid: false, platform: "小紅書", pic: "🐰🌸🐰", remarks: "" }
+            { item: "Item 1", ip: ["IP1"], status: "待出貨", date: "2026-06-01", arrived: "2026年7月", paid: 100, currency: "HKD", balance: 180, fullpaid: false, platform: "小紅書", pic: "", remarks: "" }
         ];
 
         let goodsList;
@@ -1137,7 +1139,6 @@
             globalRate = parseFloat(localStorage.getItem('goodsTrackerRate')) || 1.16;
             ipSettings = JSON.parse(localStorage.getItem('goodsTrackerIpSettings')) || defaultIpSettings;
             
-            // 讀取平台設定，並兼容舊版本純字串陣列的轉化
             let savedPlats = localStorage.getItem('goodsTrackerPlatformSettings');
             if (savedPlats) {
                 let parsed = JSON.parse(savedPlats);
@@ -1153,12 +1154,7 @@
             headerTitle = localStorage.getItem('goodsTrackerHeaderTitle') || "🍡 谷子手帳 Goods Tracker";
             currentSortMode = localStorage.getItem('goodsTrackerSortMode') || 'arrived_desc'; 
         } catch (e) {
-            goodsList = defaultData;
-            globalRate = 1.16;
-            ipSettings = defaultIpSettings;
-            platformSettings = defaultPlatformSettings;
-            headerTitle = "🍡 谷子手帳 Goods Tracker";
-            currentSortMode = 'arrived_desc';
+            goodsList = defaultData; globalRate = 1.16; ipSettings = defaultIpSettings; platformSettings = defaultPlatformSettings; headerTitle = "🍡 谷子手帳 Goods Tracker"; currentSortMode = 'arrived_desc';
         }
 
         goodsList.forEach(item => {
@@ -1191,8 +1187,7 @@
             if (!isNaN(inputVal) && inputVal > 0) {
                 globalRate = inputVal;
                 try { localStorage.setItem('goodsTrackerRate', globalRate); } catch(e){}
-                calculateConvertedPrice();
-                render();
+                calculateConvertedPrice(); render();
             }
         }
 
@@ -1224,18 +1219,16 @@
             return (((r*299)+(g*587)+(b*114))/1000 >= 128) ? '#4a3e41' : '#ffffff';
         }
 
-        // 圖片上傳至 IP 預覽
+        /* --- IP Icon 處理 --- */
         function handleIpIconUpload(event) {
-            const file = event.target.files[0];
-            if (!file) return;
+            const file = event.target.files[0]; if (!file) return;
             const reader = new FileReader();
             reader.onload = function(e) {
                 document.getElementById('new-ip-pic').value = e.target.result;
                 document.getElementById('new-ip-icon-preview').src = e.target.result;
                 document.getElementById('new-ip-icon-preview').style.display = 'block';
                 document.getElementById('new-ip-icon-placeholder').style.display = 'none';
-                // 顯示清除按鈕
-                document.getElementById('ip-icon-clear-btn').style.display = 'inline-block'; 
+                document.getElementById('ip-icon-clear-btn').style.display = 'inline-block';
             };
             reader.readAsDataURL(file);
         }
@@ -1245,22 +1238,19 @@
             document.getElementById('new-ip-file').value = '';
             document.getElementById('new-ip-icon-preview').style.display = 'none';
             document.getElementById('new-ip-icon-placeholder').style.display = 'block';
-            // 隱藏清除按鈕
-            document.getElementById('ip-icon-clear-btn').style.display = 'none'; 
+            document.getElementById('ip-icon-clear-btn').style.display = 'none';
         }
 
-        // 圖片上傳至 購買平台 預覽
+        /* --- Platform Icon 處理 --- */
         function handlePlatformIconUpload(event) {
-            const file = event.target.files[0];
-            if (!file) return;
+            const file = event.target.files[0]; if (!file) return;
             const reader = new FileReader();
             reader.onload = function(e) {
                 document.getElementById('new-platform-pic').value = e.target.result;
                 document.getElementById('new-platform-icon-preview').src = e.target.result;
                 document.getElementById('new-platform-icon-preview').style.display = 'block';
                 document.getElementById('new-platform-icon-placeholder').style.display = 'none';
-                // 顯示清除按鈕
-                document.getElementById('platform-icon-clear-btn').style.display = 'inline-block'; 
+                document.getElementById('platform-icon-clear-btn').style.display = 'inline-block';
             };
             reader.readAsDataURL(file);
         }
@@ -1270,35 +1260,38 @@
             document.getElementById('new-platform-file').value = '';
             document.getElementById('new-platform-icon-preview').style.display = 'none';
             document.getElementById('new-platform-icon-placeholder').style.display = 'block';
-            // 隱藏清除按鈕
-            document.getElementById('platform-icon-clear-btn').style.display = 'none'; 
+            document.getElementById('platform-icon-clear-btn').style.display = 'none';
         }
 
         function renderSettingsManager() {
-            // IP 清單渲染
-            const ipContainer = document.getElementById('ip-manager-list');
-            ipContainer.innerHTML = '';
+            // IP 清單渲染 (加上修改按鈕)
+            const ipContainer = document.getElementById('ip-manager-list'); ipContainer.innerHTML = '';
             ipSettings.forEach(ip => {
                 const iconTag = ip.pic ? `<img src="${ip.pic}" class="square-badge-icon">` : '';
                 ipContainer.innerHTML += `
                     <div class="settings-item">
                         <div style="display:flex; align-items:center; gap:8px;">
-                            <span class="ip-badge" style="background-color: ${ip.color}; color: ${ip.textColor || getContrastYIQ(ip.color)};">${iconTag}${ip.name}</span>
+                            <span class="ip-badge" style="background-color: ${ip.color}; color: ${ip.textColor || getContrastYIQ(ip.color)};">${iconTag}${ip.name || '(純Icon)'}</span>
                             <input type="color" value="${ip.color}" onchange="updateIpColor('${ip.id}', this.value)" style="border:none; width:22px; height:22px; cursor:pointer; background:none;">
                         </div>
-                        ${ip.id !== 'OTHERS' ? `<button class="action-btn delete" onclick="deleteIp('${ip.id}')">刪除</button>` : ''}
+                        <div>
+                            <button class="action-btn edit" onclick="startEditIp('${ip.id}')" style="padding: 2px 4px; font-size:11px;">修改</button>
+                            ${ip.id !== 'OTHERS' ? `<button class="action-btn delete" onclick="deleteIp('${ip.id}')" style="padding: 2px 4px; font-size:11px;">刪除</button>` : ''}
+                        </div>
                     </div>`;
             });
 
-            // 平台清單渲染
-            const platformContainer = document.getElementById('platform-manager-list');
-            platformContainer.innerHTML = '';
+            // 平台清單渲染 (加上修改按鈕)
+            const platformContainer = document.getElementById('platform-manager-list'); platformContainer.innerHTML = '';
             platformSettings.forEach(plat => {
                 const iconTag = plat.pic ? `<img src="${plat.pic}" class="platform-tag-icon">` : '🛒 ';
                 platformContainer.innerHTML += `
                     <div class="settings-item">
-                        <span style="font-size:12px; font-weight:bold; display:inline-flex; align-items:center; gap:4px;">${iconTag}${plat.name}</span>
-                        ${plat.id !== '其他' ? `<button class="action-btn delete" onclick="deletePlatform('${plat.id}')">刪除</button>` : ''}
+                        <span style="font-size:12px; font-weight:bold; display:inline-flex; align-items:center; gap:4px;">${iconTag}${plat.name || '(純Icon平台)'}</span>
+                        <div>
+                            <button class="action-btn edit" onclick="startEditPlatform('${plat.id}')" style="padding: 2px 4px; font-size:11px;">修改</button>
+                            ${plat.id !== '其他' ? `<button class="action-btn delete" onclick="deletePlatform('${plat.id}')" style="padding: 2px 4px; font-size:11px;">刪除</button>` : ''}
+                        </div>
                     </div>`;
             });
         }
@@ -1312,96 +1305,144 @@
             });
         }
 
+        /* --- IP 新增與修改全局連動邏輯 --- */
+        function startEditIp(id) {
+            const ip = ipSettings.find(item => item.id === id); if (!ip) return;
+            document.getElementById('edit-ip-id').value = ip.id;
+            document.getElementById('new-ip-name').value = ip.name;
+            document.getElementById('new-ip-color').value = ip.color;
+            if (ip.pic) {
+                document.getElementById('new-ip-pic').value = ip.pic;
+                document.getElementById('new-ip-icon-preview').src = ip.pic;
+                document.getElementById('new-ip-icon-preview').style.display = 'block';
+                document.getElementById('new-ip-icon-placeholder').style.display = 'none';
+                document.getElementById('ip-icon-clear-btn').style.display = 'inline-block';
+            } else { clearIpIconUpload(); }
+            document.getElementById('ip-submit-btn').innerText = '💾 儲存修改';
+        }
+
         function addNewIp() {
+            const editId = document.getElementById('edit-ip-id').value;
             const nameInput = document.getElementById('new-ip-name');
             const colorInput = document.getElementById('new-ip-color');
             const picInput = document.getElementById('new-ip-pic');
-            const name = nameInput.value.trim();
-            const color = colorInput.value;
-            const pic = picInput.value;
+            const name = nameInput.value.trim(); const color = colorInput.value; const pic = picInput.value;
 
-            // 只要有上傳圖標或有輸入文字其中一個，即可新增
             if (!name && !pic) return alert('請輸入 IP 名稱或上傳圖標！');
 
-            const id = name ? name.toUpperCase().replace(/\s+/g, '_') : 'IP_' + Date.now();
-            if (ipSettings.some(ip => ip.id === id)) return alert('該 IP 已存在！');
+            if (editId) {
+                // 修改模式
+                const ip = ipSettings.find(item => item.id === editId);
+                if (ip) {
+                    const oldId = ip.id;
+                    const newId = name ? name.toUpperCase().replace(/\s+/g, '_') : 'IP_' + Date.now();
+                    
+                    // 全局更新主頁卡片的手帳記錄 IP 名字連動
+                    goodsList.forEach(item => {
+                        if (Array.isArray(item.ip)) {
+                            item.ip = item.ip.map(val => val === oldId ? newId : val);
+                        }
+                    });
+                    
+                    ip.id = newId; ip.name = name; ip.color = color; ip.textColor = getContrastYIQ(color); ip.pic = pic;
+                    if (currentIPFilter === oldId) currentIPFilter = newId;
+                }
+                document.getElementById('edit-ip-id').value = '';
+                document.getElementById('ip-submit-btn').innerText = '＋新增 IP';
+            } else {
+                // 新增模式
+                const id = name ? name.toUpperCase().replace(/\s+/g, '_') : 'IP_' + Date.now();
+                if (ipSettings.some(ip => ip.id === id)) return alert('該 IP 已存在！');
+                ipSettings.push({ id, name, color, textColor: getContrastYIQ(color), pic });
+            }
 
-            ipSettings.push({ id, name, color, textColor: getContrastYIQ(color), pic });
             try { localStorage.setItem('goodsTrackerIpSettings', JSON.stringify(ipSettings)); } catch(e){}
-            
-            nameInput.value = '';
-            clearIpIconUpload();
-            renderSettingsManager();
-            renderFilters();
-            render();
+            nameInput.value = ''; clearIpIconUpload(); saveData(); renderSettingsManager(); renderFilters();
         }
 
         function updateIpColor(id, newColor) {
             const ip = ipSettings.find(item => item.id === id);
             if (ip) {
-                ip.color = newColor;
-                ip.textColor = getContrastYIQ(newColor);
+                ip.color = newColor; ip.textColor = getContrastYIQ(newColor);
                 try { localStorage.setItem('goodsTrackerIpSettings', JSON.stringify(ipSettings)); } catch(e){}
-                renderSettingsManager();
-                renderFilters();
-                render();
+                renderSettingsManager(); renderFilters(); render();
             }
         }
 
         function deleteIp(id) {
             if (id === 'OTHERS') return;
             if (confirm(`確定要刪除 IP 嗎？相關物品會自動歸類到「其他」。`)) {
-                goodsList.forEach(item => {
-                    if (Array.isArray(item.ip)) item.ip = item.ip.map(val => val === id ? 'OTHERS' : val);
-                });
+                goodsList.forEach(item => { if (Array.isArray(item.ip)) item.ip = item.ip.map(val => val === id ? 'OTHERS' : val); });
                 ipSettings = ipSettings.filter(ip => ip.id !== id);
                 if (currentIPFilter === id) currentIPFilter = 'all';
                 try { localStorage.setItem('goodsTrackerIpSettings', JSON.stringify(ipSettings)); } catch(e){}
-                saveData();
-                renderSettingsManager();
-                renderFilters();
+                saveData(); renderSettingsManager(); renderFilters();
             }
         }
 
+        /* --- 購買平台 新增與修改全局連動邏輯 --- */
+        function startEditPlatform(id) {
+            const plat = platformSettings.find(item => item.id === id); if (!plat) return;
+            document.getElementById('edit-platform-id').value = plat.id;
+            document.getElementById('new-platform-name').value = plat.name;
+            if (plat.pic) {
+                document.getElementById('new-platform-pic').value = plat.pic;
+                document.getElementById('new-platform-icon-preview').src = plat.pic;
+                document.getElementById('new-platform-icon-preview').style.display = 'block';
+                document.getElementById('new-platform-icon-placeholder').style.display = 'none';
+                document.getElementById('platform-icon-clear-btn').style.display = 'inline-block';
+            } else { clearPlatformIconUpload(); }
+            document.getElementById('platform-submit-btn').innerText = '💾 儲存修改';
+        }
+
         function addNewPlatform() {
+            const editId = document.getElementById('edit-platform-id').value;
             const input = document.getElementById('new-platform-name');
             const picInput = document.getElementById('new-platform-pic');
-            const name = input.value.trim();
-            const pic = picInput.value;
+            const name = input.value.trim(); const pic = picInput.value;
 
-            // 只要有上傳圖標或有輸入文字其中一個，即可新增
             if (!name && !pic) return alert('請輸入平台名稱或上傳圖標！');
 
-            const id = name ? name : 'PLAT_' + Date.now();
-            if (platformSettings.some(p => p.id === id)) return alert('該平台已存在！');
-
-            const newPlat = { id, name, pic };
-            const otherIdx = platformSettings.findIndex(p => p.id === '其他');
-            if (otherIdx > -1) platformSettings.splice(otherIdx, 0, newPlat);
-            else platformSettings.push(newPlat);
+            if (editId) {
+                // 修改模式
+                const plat = platformSettings.find(item => item.id === editId);
+                if (plat) {
+                    const oldId = plat.id;
+                    const newId = name ? name : 'PLAT_' + Date.now();
+                    
+                    // 全局更新主頁卡片的手帳記錄 平台名字連動
+                    goodsList.forEach(item => { if (item.platform === oldId) item.platform = newId; });
+                    
+                    plat.id = newId; plat.name = name; plat.pic = pic;
+                }
+                document.getElementById('edit-platform-id').value = '';
+                document.getElementById('platform-submit-btn').innerText = '＋新增平台';
+            } else {
+                // 新增模式
+                const id = name ? name : 'PLAT_' + Date.now();
+                if (platformSettings.some(p => p.id === id)) return alert('該平台已存在！');
+                const newPlat = { id, name, pic };
+                const otherIdx = platformSettings.findIndex(p => p.id === '其他');
+                if (otherIdx > -1) platformSettings.splice(otherIdx, 0, newPlat);
+                else platformSettings.push(newPlat);
+            }
 
             try { localStorage.setItem('goodsTrackerPlatformSettings', JSON.stringify(platformSettings)); } catch(e){}
-            input.value = '';
-            clearPlatformIconUpload();
-            renderSettingsManager();
+            input.value = ''; clearPlatformIconUpload(); saveData(); renderSettingsManager();
         }
 
         function deletePlatform(id) {
             if (id === '其他') return;
             if (confirm(`確定要刪除平台嗎？相關物品會自動轉為「其他」。`)) {
-                goodsList.forEach(item => {
-                    if (item.platform === id) item.platform = '其他';
-                });
+                goodsList.forEach(item => { if (item.platform === id) item.platform = '其他'; });
                 platformSettings = platformSettings.filter(p => p.id !== id);
                 try { localStorage.setItem('goodsTrackerPlatformSettings', JSON.stringify(platformSettings)); } catch(e){}
-                saveData();
-                renderSettingsManager();
+                saveData(); renderSettingsManager();
             }
         }
 
         function renderFormIpTags() {
-            const container = document.getElementById('form-ip-container');
-            container.innerHTML = '';
+            const container = document.getElementById('form-ip-container'); container.innerHTML = '';
             ipSettings.forEach(ip => {
                 const iconTag = ip.pic ? `<img src="${ip.pic}" class="square-badge-icon">` : '';
                 container.innerHTML += `
@@ -1427,16 +1468,13 @@
                     const ip = ipSettings.find(item => item.id === val);
                     if (ip) { el.style.backgroundColor = ip.color; el.style.color = ip.textColor || getContrastYIQ(ip.color); }
                 } else {
-                    el.classList.add('unselected');
-                    el.style.backgroundColor = '#f1f3f5';
-                    el.style.color = 'var(--text-color)';
+                    el.classList.add('unselected'); el.style.backgroundColor = '#f1f3f5'; el.style.color = 'var(--text-color)';
                 }
             });
         }
 
         function renderFormPlatforms() {
-            const select = document.getElementById('form-platform');
-            select.innerHTML = '';
+            const select = document.getElementById('form-platform'); select.innerHTML = '';
             platformSettings.forEach(plat => {
                 select.innerHTML += `<option value="${plat.id}">${plat.name || '(純圖標平台)'}</option>`;
             });
@@ -1465,8 +1503,7 @@
 
         function parseArrivalDate(str) {
             if (!str) return null;
-            let matches = str.match(/\d+/g);
-            if (!matches) return null;
+            let matches = str.match(/\d+/g); if (!matches) return null;
             let year = 2026, month = 1;
             if (matches.length === 1) month = parseInt(matches[0]);
             else if (matches.length >= 2) { year = parseInt(matches[0]); if (year < 100) year += 2000; month = parseInt(matches[1]); }
@@ -1495,8 +1532,7 @@
         }
 
         function handleImageUpload(event) {
-            const file = event.target.files[0];
-            if (!file) return;
+            const file = event.target.files[0]; if (!file) return;
             const reader = new FileReader();
             reader.onload = function(e) {
                 document.getElementById('form-pic').value = e.target.result;
@@ -1506,21 +1542,15 @@
         }
 
         function clearUploadedImage() {
-            document.getElementById('form-pic').value = '';
-            document.getElementById('form-file').value = '';
+            document.getElementById('form-pic').value = ''; document.getElementById('form-file').value = '';
             document.getElementById('pic-preview').innerHTML = `<span style="font-size:10px; color:var(--text-light);">📸 無圖</span>`;
         }
 
         function calculateStats() {
             let imminent = 0, pending = 0, balTotalRMB = 0;
-            const now = new Date();
-            const currentTimestamp = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+            const now = new Date(); const currentTimestamp = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
             goodsList.forEach(item => {
-                if (item.status !== '完成') {
-                    pending++;
-                    const arrTime = parseArrivalDate(item.arrived);
-                    if (arrTime !== null && arrTime <= currentTimestamp) imminent++;
-                }
+                if (item.status !== '完成') { pending++; let arrTime = parseArrivalDate(item.arrived); if (arrTime !== null && arrTime <= currentTimestamp) imminent++; }
                 const balInRMB = (item.balanceCurrency || 'RMB') === 'RMB' ? Number(item.balance || 0) : (Number(item.balance || 0) / globalRate);
                 balTotalRMB += balInRMB;
             });
@@ -1531,8 +1561,7 @@
 
         function render() {
             calculateStats();
-            const container = document.getElementById('goods-container');
-            container.innerHTML = '';
+            const container = document.getElementById('goods-container'); container.innerHTML = '';
 
             let filteredList = goodsList.filter(item => {
                 let statusMatch = currentStatusFilter === 'all' ? true : (currentStatusFilter === 'ongoing' ? item.status !== '完成' : item.status === currentStatusFilter);
@@ -1552,13 +1581,11 @@
             });
 
             if (filteredList.length === 0) {
-                container.innerHTML = `<div style="text-align:center; padding:40px; color:var(--text-light);">暫時無相關記錄，撳下方 "+" 加一件啦！</div>`;
-                return;
+                container.innerHTML = `<div style="text-align:center; padding:40px; color:var(--text-light);">暫時無相關記錄，撳下方 "+" 加一件啦！</div>`; return;
             }
 
             filteredList.forEach((item) => {
-                const actualIndex = goodsList.indexOf(item);
-                const card = document.createElement('div');
+                const actualIndex = goodsList.indexOf(item); const card = document.createElement('div');
                 card.className = item.status === '完成' ? 'goods-card card-completed' : 'goods-card';
 
                 let statusClass = 'status-pending';
@@ -1578,7 +1605,6 @@
                     ipBadgesHTML += `<span class="ip-badge" style="background-color: ${ipSetting.color}; color: ${ipSetting.textColor || getContrastYIQ(ipSetting.color)};">${iconTag}${ipSetting.name}</span> `;
                 });
 
-                // 尋找平台自訂圖標
                 const platSetting = platformSettings.find(p => p.id === item.platform);
                 const platIconHTML = (platSetting && platSetting.pic) ? `<img src="${platSetting.pic}" class="platform-tag-icon">` : '🛒 ';
                 const platNameDisplay = (platSetting && platSetting.name) ? platSetting.name : (item.platform || '其他');
@@ -1624,35 +1650,26 @@
         }
 
         function filterStatus(status, event) {
-            currentStatusFilter = status;
-            document.querySelectorAll('#status-filters .filter-btn').forEach(btn => btn.classList.remove('active'));
-            if (event) event.target.classList.add('active');
-            render();
+            currentStatusFilter = status; document.querySelectorAll('#status-filters .filter-btn').forEach(btn => btn.classList.remove('active'));
+            if (event) event.target.classList.add('active'); render();
         }
 
         function filterIP(ip, event) {
-            currentIPFilter = ip;
-            document.querySelectorAll('#ip-filters .filter-btn').forEach(btn => btn.classList.remove('active'));
-            if (event) event.target.classList.add('active');
-            render();
+            currentIPFilter = ip; document.querySelectorAll('#ip-filters .filter-btn').forEach(btn => btn.classList.remove('active'));
+            if (event) event.target.classList.add('active'); render();
         }
 
         function openModal(action, index = null) {
-            const modal = document.getElementById('goods-modal');
-            document.getElementById('goods-form').reset();
-            clearUploadedImage();
-            document.getElementById('conversion-preview').innerText = '';
-            renderFormIpTags();
-            renderFormPlatforms();
+            const modal = document.getElementById('goods-modal'); document.getElementById('goods-form').reset();
+            clearUploadedImage(); document.getElementById('conversion-preview').innerText = '';
+            renderFormIpTags(); renderFormPlatforms();
 
             if (action === 'edit' && index !== null) {
                 document.getElementById('modal-action-title').innerText = '修改谷子記錄';
-                const item = goodsList[index];
-                document.getElementById('edit-index').value = index;
+                const item = goodsList[index]; document.getElementById('edit-index').value = index;
                 document.getElementById('form-item').value = item.item;
                 selectedFormIPs = Array.isArray(item.ip) ? [...item.ip] : [item.ip || 'OTHERS'];
-                updateFormIPClasses();
-                document.getElementById('form-status').value = item.status;
+                updateFormIPClasses(); document.getElementById('form-status').value = item.status;
                 document.getElementById('form-date').value = item.date;
 
                 let yVal = '', mVal = '';
@@ -1660,15 +1677,11 @@
                     const yM = item.arrived.match(/(\d+)年/), mM = item.arrived.match(/(\d+)月/);
                     if (yM) yVal = yM[1]; if (mM) mVal = mM[1];
                 }
-                document.getElementById('form-arrived-year').value = yVal;
-                document.getElementById('form-arrived-month').value = mVal;
-                document.getElementById('form-paid').value = item.paid;
-                document.getElementById('form-currency').value = item.currency || 'HKD';
-                document.getElementById('form-balance').value = item.balance;
-                document.getElementById('form-balance-currency').value = item.balanceCurrency || 'RMB';
+                document.getElementById('form-arrived-year').value = yVal; document.getElementById('form-arrived-month').value = mVal;
+                document.getElementById('form-paid').value = item.paid; document.getElementById('form-currency').value = item.currency || 'HKD';
+                document.getElementById('form-balance').value = item.balance; document.getElementById('form-balance-currency').value = item.balanceCurrency || 'RMB';
                 document.getElementById('form-platform').value = platformSettings.some(p => p.id === item.platform) ? item.platform : '其他';
-                document.getElementById('form-fullpaid').checked = item.fullpaid;
-                document.getElementById('form-pic').value = item.pic;
+                document.getElementById('form-fullpaid').checked = item.fullpaid; document.getElementById('form-pic').value = item.pic;
                 document.getElementById('form-remarks').value = item.remarks;
 
                 if (item.pic) {
@@ -1676,29 +1689,20 @@
                 }
                 calculateConvertedPrice();
             } else {
-                document.getElementById('modal-action-title').innerText = '新增谷子記錄';
-                document.getElementById('edit-index').value = '';
-                selectedFormIPs = ipSettings.length > 0 ? [ipSettings[0].id] : ['OTHERS'];
-                updateFormIPClasses();
+                document.getElementById('modal-action-title').innerText = '新增谷子記錄'; document.getElementById('edit-index').value = '';
+                selectedFormIPs = ipSettings.length > 0 ? [ipSettings[0].id] : ['OTHERS']; updateFormIPClasses();
                 document.getElementById('form-date').value = new Date().toISOString().split('T')[0];
-                document.getElementById('form-currency').value = 'HKD';
-                document.getElementById('form-balance-currency').value = 'RMB';
-                document.getElementById('form-arrived-year').value = new Date().getFullYear();
-                document.getElementById('form-arrived-month').value = '';
+                document.getElementById('form-currency').value = 'HKD'; document.getElementById('form-balance-currency').value = 'RMB';
+                document.getElementById('form-arrived-year').value = new Date().getFullYear(); document.getElementById('form-arrived-month').value = '';
                 if (platformSettings.length > 0) document.getElementById('form-platform').value = platformSettings[0].id;
             }
-            modal.classList.add('active');
-            document.body.classList.add('modal-open');
+            modal.classList.add('active'); document.body.classList.add('modal-open');
         }
 
-        function closeModal() {
-            document.getElementById('goods-modal').classList.remove('active');
-            document.body.classList.remove('modal-open');
-        }
+        function closeModal() { document.getElementById('goods-modal').classList.remove('active'); document.body.classList.remove('modal-open'); }
 
         function saveGoods(event) {
-            event.preventDefault();
-            const index = document.getElementById('edit-index').value;
+            event.preventDefault(); const index = document.getElementById('edit-index').value;
             const y = document.getElementById('form-arrived-year').value.trim(), m = document.getElementById('form-arrived-month').value.trim();
             let combined = (y || m) ? `${y ? y + '年' : ''}${m ? m + '月' : ''}` : '';
 
@@ -1718,39 +1722,26 @@
                 remarks: document.getElementById('form-remarks').value
             };
 
-            if (index !== '') goodsList[index] = itemData;
-            else goodsList.push(itemData);
-
-            saveData();
-            closeModal();
-            window.location.reload();
+            if (index !== '') goodsList[index] = itemData; else goodsList.push(itemData);
+            saveData(); closeModal(); window.location.reload();
         }
 
-        function duplicateGoods(index) {
-            const dup = JSON.parse(JSON.stringify(goodsList[index]));
-            dup.item += " (Copy)";
-            goodsList.splice(index + 1, 0, dup);
-            saveData();
-        }
-
+        function duplicateGoods(index) { const dup = JSON.parse(JSON.stringify(goodsList[index])); dup.item += " (Copy)"; goodsList.splice(index + 1, 0, dup); saveData(); }
         function editGoods(index) { openModal('edit', index); }
-
         function deleteGoods(index) { if (confirm('確定要刪除這個記錄嗎？')) { goodsList.splice(index, 1); saveData(); } }
 
         function exportData() {
             try {
                 const jsonString = JSON.stringify({ goodsList, globalRate, ipSettings, platformSettings, headerTitle }, null, 2);
                 const blob = new Blob([jsonString], { type: "application/json;charset=utf-8" });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
+                const url = URL.createObjectURL(blob); const a = document.createElement('a');
                 a.href = url; a.download = `goodsbackup_${new Date().toISOString().split('T')[0]}.json`;
                 document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
             } catch (err) { alert('備份失敗：' + err.message); }
         }
 
         function importData() {
-            const input = document.createElement('input');
-            input.type = 'file'; input.accept = '.json';
+            const input = document.createElement('input'); input.type = 'file'; input.accept = '.json';
             input.onchange = e => {
                 const file = e.target.files[0], reader = new FileReader();
                 reader.onload = re => {
@@ -1767,9 +1758,7 @@
                             if (parsed.platformSettings) { platformSettings = parsed.platformSettings; localStorage.setItem('goodsTrackerPlatformSettings', JSON.stringify(platformSettings)); }
                             if (parsed.headerTitle) { headerTitle = parsed.headerTitle; localStorage.setItem('goodsTrackerHeaderTitle', headerTitle); }
                         } else {
-                            incomingList.forEach(inc => {
-                                if (!goodsList.some(ex => ex.item === inc.item && ex.date === inc.date && ex.paid === inc.paid)) goodsList.push(inc);
-                            });
+                            incomingList.forEach(inc => { if (!goodsList.some(ex => ex.item === inc.item && ex.date === inc.date && ex.paid === inc.paid)) goodsList.push(inc); });
                             if (parsed.ipSettings) {
                                 parsed.ipSettings.forEach(incIp => { if (!ipSettings.some(ex => ex.id === incIp.id)) ipSettings.push(incIp); });
                                 localStorage.setItem('goodsTrackerIpSettings', JSON.stringify(ipSettings));
