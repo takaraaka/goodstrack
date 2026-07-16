@@ -280,20 +280,23 @@
             border-color: var(--primary-color);
         }
 
-        /* Sorting Button Styling */
-        .sort-btn {
+        /* Sorting Select Styling (已隱藏小三角形) */
+        .sort-select {
             background: var(--primary-light);
             border: 1px solid var(--primary-color);
             color: var(--primary-color);
-            padding: 6px 12px;
+            padding: 6px 12px 6px 14px; /* 縮減右邊 Padding，恢復左右對稱 */
             border-radius: 20px;
             font-size: 12px;
             font-weight: bold;
             white-space: nowrap;
             cursor: pointer;
-            transition: all 0.2s;
+            outline: none;
             margin-bottom: 4px;
             margin-left: 8px;
+            -webkit-appearance: none; /* 隱藏原生瀏覽器的下拉箭頭 */
+            appearance: none;
+            text-align: center;       /* 文字置中，令它看起來跟普通按鈕一模一樣 */
         }
 
         .sort-btn:active {
@@ -826,7 +829,6 @@
 </head>
 <body>
 
-    <!-- 加上了 id 方便 JavaScript 動態替換標題 -->
     <header id="main-header">🍡 谷子手帳 Goods Tracker</header>
 
     <div class="container">
@@ -845,22 +847,18 @@
             </div>
         </div>
 
-        <!-- 外框容器：只放匯率與設定按鈕 -->
         <div class="rate-setting" id="rate-setting-wrapper">
             <div id="rate-container">💰 預設匯率 1 RMB = <input type="number" step="0.01" id="global-rate" value="1.16" onchange="updateGlobalRate()"> HKD</div>
             <span class="system-settings-toggle" onclick="toggleSystemSettings()">⚙️ 系統設定</span>
         </div>
         
-        <!-- 移出來的面板：獨立在下方，完美上下排列 -->
         <div class="system-settings-panel" id="system-settings-panel">
-            <!-- 新增：自訂手帳標題 Section -->
             <div class="settings-section-title">✍️ 自訂手帳標題</div>
             <div class="settings-add-form" style="margin-bottom: 16px;">
                 <input type="text" id="custom-header-title" placeholder="輸入新的手帳標題 (例如: Usahana's HandBook)">
                 <button class="settings-btn" onclick="updateHeaderTitle()">儲存標題</button>
             </div>
 
-            <!-- IP 分類 Section -->
             <div class="settings-section-title">🎨 IP 分類及顏色管理</div>
             <div class="settings-list" id="ip-manager-list"></div>
             <div class="settings-add-form">
@@ -869,7 +867,6 @@
                 <button class="settings-btn" onclick="addNewIp()">＋新增 IP</button>
             </div>
 
-            <!-- 購買平台 Section -->
             <div class="settings-section-title">🛒 購買平台管理</div>
             <div class="settings-list" id="platform-manager-list"></div>
             <div class="settings-add-form">
@@ -894,7 +891,12 @@
                 <div class="filter-row-label">IP分類</div>
                 <div class="filter-row-container">
                     <div class="filter-row" id="ip-filters"></div>
-                    <button class="sort-btn" id="cycle-sort-btn" onclick="cycleSortMode()">📅 到貨期 ▼</button>
+                    <select class="sort-select" id="sort-select" onchange="changeSortMode(this.value)">
+                        <option value="arrived_desc">📅 到貨日⬇︎</option>
+                        <option value="arrived_asc">📅 到貨日⬆︎</option>
+                        <option value="order_desc">🛒 下單日⬇︎</option>
+                        <option value="order_asc">🛒 下單日⬆︎</option>
+                    </select>
                 </div>
             </div>
         </div>
@@ -961,7 +963,6 @@
                     </div>
                 </div>
 
-                <!-- 將已付、尾款包在同一個 flex row 裡面一行過 -->
                 <div class="financial-row-form">
                     <div class="form-group">
                         <label>已付</label>
@@ -986,7 +987,6 @@
                     </div>
                 </div>
                 
-                <!-- 匯率預覽保留在它們正下方 -->
                 <div id="conversion-preview" style="font-size:11px; color:var(--primary-color); margin-top:-8px; margin-bottom:12px; padding-left:2px;"></div>
 
                 <div class="form-group">
@@ -1078,18 +1078,20 @@
             }
         ];
 
-        // Safe localStorage loading
         let goodsList;
         let globalRate;
         let ipSettings;
         let platformSettings;
         let headerTitle; // 自訂手帳標題變數
+        let currentSortMode; // 宣告排序變數
         try {
             goodsList = JSON.parse(localStorage.getItem('goodsTrackerData')) || defaultData;
             globalRate = parseFloat(localStorage.getItem('goodsTrackerRate')) || 1.16;
             ipSettings = JSON.parse(localStorage.getItem('goodsTrackerIpSettings')) || defaultIpSettings;
             platformSettings = JSON.parse(localStorage.getItem('goodsTrackerPlatformSettings')) || defaultPlatformSettings;
             headerTitle = localStorage.getItem('goodsTrackerHeaderTitle') || "🍡 谷子手帳 Goods Tracker";
+            // 讀取儲存的排序，若無則預設為 'arrived_desc'
+            currentSortMode = localStorage.getItem('goodsTrackerSortMode') || 'arrived_desc'; 
         } catch (e) {
             console.warn("LocalStorage access blocked/disabled. Using session cache.");
             goodsList = defaultData;
@@ -1097,6 +1099,7 @@
             ipSettings = defaultIpSettings;
             platformSettings = defaultPlatformSettings;
             headerTitle = "🍡 谷子手帳 Goods Tracker";
+            currentSortMode = 'arrived_desc';
         }
 
         // Migration logic
@@ -1115,10 +1118,7 @@
         let currentStatusFilter = 'ongoing';
         let currentIPFilter = 'all';
 
-        // Sort settings
-        let sortModes = ['arrived_desc', 'arrived_asc', 'order_desc', 'order_asc'];
-        let sortLabels = ['📅 到貨期 ▼', '📅 到貨期 ▲', '🛒 下單日 ▼', '🛒 下單日 ▲'];
-        let currentSortIndex = 0;
+        // 移除了這裡重複的 let currentSortMode 宣告，保留原本開頭讀取的 currentSortMode
 
         document.getElementById('global-rate').value = globalRate.toFixed(2);
 
@@ -1126,6 +1126,12 @@
             // 初始化並套用手帳自訂標題
             document.getElementById('main-header').innerText = headerTitle;
             document.getElementById('custom-header-title').value = headerTitle;
+
+            // 新增：同步下拉選單的選取狀態
+            const sortSelect = document.getElementById('sort-select');
+            if (sortSelect) {
+                sortSelect.value = currentSortMode;
+            }
 
             renderFilters();
             renderSettingsManager();
@@ -1444,9 +1450,12 @@
             render();
         }
 
-        function cycleSortMode() {
-            currentSortIndex = (currentSortIndex + 1) % 4;
-            document.getElementById('cycle-sort-btn').innerText = sortLabels[currentSortIndex];
+        function changeSortMode(value) {
+            currentSortMode = value;
+            try {
+                // 每次切換排序時，立刻保存到 LocalStorage
+                localStorage.setItem('goodsTrackerSortMode', currentSortMode); 
+            } catch(e){}
             render();
         }
 
@@ -1584,7 +1593,7 @@
                 return statusMatch && ipMatch;
             });
 
-            let mode = sortModes[currentSortIndex];
+            let mode = currentSortMode;
             filteredList.sort((a, b) => {
                 if (mode === 'arrived_desc') {
                     let tA = parseArrivalDate(a.arrived);
@@ -1784,7 +1793,9 @@
                 document.getElementById('form-date').value = new Date().toISOString().split('T')[0];
                 document.getElementById('form-currency').value = 'HKD';
                 document.getElementById('form-balance-currency').value = 'RMB';
-                document.getElementById('form-arrived-year').value = '';
+                
+                // 修改：自動將預計到貨的年份 default 設定為今年 (例如 2026)
+                document.getElementById('form-arrived-year').value = new Date().getFullYear(); 
                 document.getElementById('form-arrived-month').value = '';
                 
                 // Default to first platform
@@ -1801,7 +1812,7 @@
         function closeModal() {
             document.getElementById('goods-modal').classList.remove('active');
 
-          // 新增：關閉彈窗時，解除鎖定，讓主頁恢復滾動
+            // 新增：關閉彈窗時，解除鎖定，讓主頁恢復滾動
             document.body.classList.remove('modal-open');
         }
 
@@ -1840,6 +1851,9 @@
 
             saveData();
             closeModal();
+
+            // 新增：儲存完畢後自動重新整理網頁，確保下一個訂單和排序完全正確
+            window.location.reload();
         }
 
         function duplicateGoods(index) {
