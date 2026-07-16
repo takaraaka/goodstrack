@@ -574,10 +574,9 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0,0,0,0.5);
+            background: rgba(0,0,0,0.5); /* 背後維持舒服的半透明暗色遮罩 */
             z-index: 10000;
             align-items: flex-end;
-            padding-top: env(safe-area-inset-top); /* 確保頂部不會頂到 iOS 狀態列 */
         }
 
         .modal.active {
@@ -587,29 +586,32 @@
         .modal-content {
             background: white;
             width: 100%;
-            height: 95vh;           /* 改為 95vh，幾乎佔滿整個手機螢幕 */
-            border-top-left-radius: 20px;
-            border-top-right-radius: 20px;
-            padding: 12px 20px 80px 20px; /* 底部預留 80px 空間放固定儲存按鈕，防止內容被遮擋 */
-            overflow-y: auto;       /* 只允許彈窗內部滾動 */
+            height: 100vh;           /* 改為 100vh 撐滿螢幕，這樣頂部就絕對不會露出粉紅色背景！ */
+            border-top-left-radius: 0px;
+            border-top-right-radius: 0px;
+            
+            /* 【核心修改】增加頂部 Padding (50px)，把內容整體往下推，留出舒服的空白 */
+            padding: calc(16px + env(safe-area-inset-top)) 20px 80px 20px; 
+            
+            overflow-y: auto;       /* 只允許內部滾動 */
             box-shadow: 0 -5px 20px rgba(0,0,0,0.15);
             position: relative;
             display: flex;
             flex-direction: column;
         }
 
-        /* 讓儲存按鈕固定在彈出視窗最底，高度更精緻 */
+        /* 儲存按鈕維持固定在最底，高度精緻 */
         .modal-content .submit-btn {
-            position: absolute;
+            position: fixed; /* 改為 fixed 確保牢牢鎖在螢幕最底 */
             bottom: 0;
             left: 0;
             right: 0;
             margin: 0;
             border-radius: 0;
-            padding: 12px; /* 變矮少少 */
-            font-size: 14px; /* 字體變小更細緻 */
+            padding: 12px;
+            font-size: 14px;
             z-index: 10;
-            padding-bottom: calc(10px + env(safe-area-inset-bottom)); /* 調整底部留白 */
+            padding-bottom: calc(12px + env(safe-area-inset-bottom)); 
         }
 
         /* 鎖定主頁滾動的 Class */
