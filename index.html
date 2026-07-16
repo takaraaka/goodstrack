@@ -586,12 +586,36 @@
         .modal-content {
             background: white;
             width: 100%;
-            max-height: 85vh;
+            height: 95vh;           /* 改為 95vh，幾乎佔滿整個手機螢幕 */
             border-top-left-radius: 20px;
             border-top-right-radius: 20px;
-            padding: 12px 20px 20px 20px;
-            overflow-y: auto;
+            padding: 12px 20px 80px 20px; /* 底部預留 80px 空間放固定儲存按鈕，防止內容被遮擋 */
+            overflow-y: auto;       /* 只允許彈窗內部滾動 */
             box-shadow: 0 -5px 20px rgba(0,0,0,0.15);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 讓儲存按鈕固定在彈出視窗最底，不需要手動 Scroll 到最底去撳 */
+        .modal-content .submit-btn {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            margin: 0;
+            border-radius: 0; /* 底部按鈕無縫貼合彈窗邊緣，非常現代美觀 */
+            padding: 16px;
+            font-size: 16px;
+            z-index: 10;
+            /* 配合手機安全區域，特別在底部加上 padding */
+            padding-bottom: calc(12px + env(safe-area-inset-bottom)); 
+        }
+
+        /* 鎖定主頁滾動的 Class */
+        body.modal-open {
+            overflow: hidden !important;
+            height: 100vh !important;
         }
 
         .modal-title {
@@ -880,7 +904,7 @@
                 <span id="modal-action-title">新增谷子記錄</span>
                 <button type="button" class="close-modal" onclick="closeModal()">&times;</button>
             </div>
-            <form id="goods-form" onsubmit="saveGoods(event)">
+            <form id="goods-form" onsubmit="saveGoods(event)" style="display: flex; flex-direction: column; height: 100%; overflow: visible;">
                 <input type="hidden" id="edit-index">
                 
                 <div class="form-group" style="margin-bottom: 12px;">
@@ -922,7 +946,6 @@
                         <select id="form-platform" class="form-control"></select>
                     </div>
                 </div>
-
 
                 <div class="form-group">
                     <label>已付</label>
@@ -970,8 +993,7 @@
                     <input type="hidden" id="form-pic">
                 </div>
 
-                <div class="form-group">
-                    <label>備註</label>
+                <div class="form-group" style="padding-bottom: 20px;"> <label>備註 (運費/落單人/拼團詳情)</label>
                     <textarea id="form-remarks" class="form-control" rows="2" placeholder=""></textarea>
                 </div>
 
@@ -1255,6 +1277,7 @@
 
                 saveIpSettings();
                 saveData();
+                closeModal(); // 這裡會自動呼叫解鎖
                 renderSettingsManager();
                 renderFilters();
                 render();
@@ -1752,10 +1775,16 @@
                 }
             }
             modal.classList.add('active');
+
+            // 新增：打開彈窗時，鎖定後面主頁不讓其滾動
+            document.body.classList.add('modal-open');
         }
 
         function closeModal() {
             document.getElementById('goods-modal').classList.remove('active');
+
+          // 新增：關閉彈窗時，解除鎖定，讓主頁恢復滾動
+            document.body.classList.remove('modal-open');
         }
 
         function saveGoods(event) {
