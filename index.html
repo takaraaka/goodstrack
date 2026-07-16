@@ -577,6 +577,7 @@
             background: rgba(0,0,0,0.5);
             z-index: 10000;
             align-items: flex-end;
+            padding-top: env(safe-area-inset-top); /* 確保頂部不會頂到 iOS 狀態列 */
         }
 
         .modal.active {
@@ -597,19 +598,18 @@
             flex-direction: column;
         }
 
-        /* 讓儲存按鈕固定在彈出視窗最底，不需要手動 Scroll 到最底去撳 */
+        /* 讓儲存按鈕固定在彈出視窗最底，高度更精緻 */
         .modal-content .submit-btn {
             position: absolute;
             bottom: 0;
             left: 0;
             right: 0;
             margin: 0;
-            border-radius: 0; /* 底部按鈕無縫貼合彈窗邊緣，非常現代美觀 */
-            padding: 16px;
-            font-size: 16px;
+            border-radius: 0;
+            padding: 12px; /* 變矮少少 */
+            font-size: 14px; /* 字體變小更細緻 */
             z-index: 10;
-            /* 配合手機安全區域，特別在底部加上 padding */
-            padding-bottom: calc(12px + env(safe-area-inset-bottom)); 
+            padding-bottom: calc(10px + env(safe-area-inset-bottom)); /* 調整底部留白 */
         }
 
         /* 鎖定主頁滾動的 Class */
@@ -808,6 +808,18 @@
             cursor: pointer;
             display: block;
         }
+
+        /* 讓已付同尾款可以完美並排 */
+        .financial-row-form {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        .financial-row-form .form-group {
+            flex: 1;
+            min-width: 0;
+            margin-bottom: 0; /* 移除原本底部的間距 */
+        }
     </style>
 </head>
 <body>
@@ -909,7 +921,7 @@
                 
                 <div class="form-group" style="margin-bottom: 12px;">
                     <label>物品名稱 *</label>
-                    <input type="text" id="form-item" class="form-control" placeholder="例如: 掛件 x 3" required>
+                    <input type="text" id="form-item" class="form-control" placeholder="例如: 掛件 x 1" required>
                 </div>
 
                 <div class="form-group">
@@ -947,29 +959,33 @@
                     </div>
                 </div>
 
-                <div class="form-group">
-                    <label>已付</label>
-                    <div class="dropdown-double-row">
-                        <select id="form-currency" class="form-control" style="flex: 0.3;" onchange="calculateConvertedPrice()">
-                            <option value="HKD">HKD</option>
-                            <option value="RMB">RMB</option>
-                        </select>
-                        <input type="number" step="0.01" id="form-paid" class="form-control" style="flex: 1.2;" placeholder="金額" oninput="calculateConvertedPrice()">
+                <!-- 將已付、尾款包在同一個 flex row 裡面一行過 -->
+                <div class="financial-row-form">
+                    <div class="form-group">
+                        <label>已付</label>
+                        <div class="dropdown-double-row">
+                            <select id="form-currency" class="form-control" style="flex: 0.45;" onchange="calculateConvertedPrice()">
+                                <option value="HKD">HKD</option>
+                                <option value="RMB">RMB</option>
+                            </select>
+                            <input type="number" step="0.01" id="form-paid" class="form-control" style="flex: 0.6;" placeholder="金額" oninput="calculateConvertedPrice()">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>尾款</label>
+                        <div class="dropdown-double-row">
+                            <select id="form-balance-currency" class="form-control" style="flex: 0.45;" onchange="calculateConvertedPrice()">
+                                <option value="RMB">RMB</option>
+                                <option value="HKD">HKD</option>
+                            </select>
+                            <input type="number" step="0.1" id="form-balance" class="form-control" style="flex: 0.6;" placeholder="金額" oninput="calculateConvertedPrice()">
+                        </div>
                     </div>
                 </div>
                 
+                <!-- 匯率預覽保留在它們正下方 -->
                 <div id="conversion-preview" style="font-size:11px; color:var(--primary-color); margin-top:-8px; margin-bottom:12px; padding-left:2px;"></div>
-
-                <div class="form-group">
-                    <label>尾款</label>
-                    <div class="dropdown-double-row">
-                        <select id="form-balance-currency" class="form-control" style="flex: 0.3;" onchange="calculateConvertedPrice()">
-                            <option value="RMB">RMB</option>
-                            <option value="HKD">HKD</option>
-                        </select>
-                        <input type="number" step="0.1" id="form-balance" class="form-control" style="flex: 1.2;" placeholder="金額" oninput="calculateConvertedPrice()">
-                    </div>
-                </div>
 
                 <div class="form-group">
                     <div class="checkbox-group">
@@ -993,7 +1009,7 @@
                     <input type="hidden" id="form-pic">
                 </div>
 
-                <div class="form-group" style="padding-bottom: 20px;"> <label>備註 (運費/落單人/拼團詳情)</label>
+                <div class="form-group" style="padding-bottom: 20px;"> <label>備註</label>
                     <textarea id="form-remarks" class="form-control" rows="2" placeholder=""></textarea>
                 </div>
 
