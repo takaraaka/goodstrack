@@ -983,9 +983,9 @@
     <script>
         // Default IP list with colors
         const defaultIpSettings = [
-            { id: "SB", name: "SB", color: "#ffe3e8", textColor: "#d85c80" },
-            { id: "KU", name: "KU", color: "#e3f0ff", textColor: "#3b7ec4" },
-            { id: "RILA", name: "RILA", color: "#fef1cf", textColor: "#9e7715" },
+            { id: "IP1", name: "IP1", color: "#ffe3e8", textColor: "#d85c80" },
+            { id: "IP2", name: "IP2", color: "#e3f0ff", textColor: "#3b7ec4" },
+            { id: "IP3", name: "IP3", color: "#fef1cf", textColor: "#9e7715" },
             { id: "OTHERS", name: "其他", color: "#ecebeb", textColor: "#5c5556" }
         ];
 
@@ -996,11 +996,11 @@
         const defaultData = [
             {
                 item: "Item 1",
-                ip: ["SB"],
+                ip: ["IP1"],
                 status: "待出貨",
-                date: "2026-06-18",
-                arrived: "2026年6月",
-                paid: 171.99,
+                date: "2026-06-01",
+                arrived: "2026年7月",
+                paid: 100,
                 currency: "HKD",
                 balance: 180,
                 fullpaid: false,
@@ -1010,12 +1010,12 @@
             },
             {
                 item: "Item 2",
-                ip: ["KU"],
+                ip: ["IP2"],
                 status: "出貨",
                 date: "2026-06-01",
-                arrived: "2026年7月",
-                paid: 173.16,
-                currency: "HKD",
+                arrived: "2026年8月",
+                paid: 100,
+                currency: "RMB",
                 balance: 0,
                 fullpaid: false,
                 platform: "拼團",
@@ -1024,11 +1024,11 @@
             },
             {
                 item: "Item 3",
-                ip: ["RILA"],
+                ip: ["IP3"],
                 status: "待出貨",
-                date: "2026-05-06",
-                arrived: "2026年7月",
-                paid: 224.40,
+                date: "2026-05-01",
+                arrived: "2026年9月",
+                paid: 100,
                 currency: "HKD",
                 balance: 0,
                 fullpaid: true,
