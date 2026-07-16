@@ -1340,14 +1340,73 @@
             });
         }
 
-        function renderFilters() {
+                function renderFilters() {
+            // 1. 初始化所有計數變量
+            let totalOngoing = 0;
+            let totalAll = goodsList.length;
+            let statusCounts = { '待出貨': 0, '出貨': 0, '到貨': 0, '完成': 0 };
+            
+            // 2. 初始化 IP 分類的計數（預設全部為 0）
+            let ipCounts = {};
+            ipSettings.forEach(ip => ipCounts[ip.id] = 0);
+            ipCounts['OTHERS'] = 0;
+
+            // 3. 遍歷手帳列表，即時計算狀態同 IP 數量
+            goodsList.forEach(item => {
+                if (item.status !== '完成') totalOngoing++;
+                if (statusCounts.hasOwnProperty(item.status)) statusCounts[item.status]++;
+                
+                // 💡 核心連動：只有符合當前「狀態過濾」嘅谷子，先會計入 IP 分類數量中
+                let matchStatus = currentStatusFilter === 'all' ? true : (currentStatusFilter === 'ongoing' ? item.status !== '完成' : item.status === currentStatusFilter);
+                
+                if (matchStatus) {
+                    const itemIps = Array.isArray(item.ip) ? item.ip : [item.ip || 'OTHERS'];
+                    itemIps.forEach(ipId => {
+                        if (ipCounts.hasOwnProperty(ipId)) {
+                            ipCounts[ipId]++;
+                        } else {
+                            ipCounts['OTHERS']++;
+                        }
+                    });
+                }
+            });
+
+            // 4. 產生並渲染「狀態 Filters」按鈕（帶計數）
+            const statusContainer = document.getElementById('status-filters');
+            statusContainer.innerHTML = `
+                <button class="filter-btn ${currentStatusFilter === 'ongoing' ? 'active' : ''}" onclick="filterStatus('ongoing', event)">進行中 (${totalOngoing})</button>
+                <button class="filter-btn ${currentStatusFilter === 'all' ? 'active' : ''}" onclick="filterStatus('all', event)">全部 (${totalAll})</button>
+                <button class="filter-btn ${currentStatusFilter === '待出貨' ? 'active' : ''}" onclick="filterStatus('待出貨', event)">待出貨 (${statusCounts['待出貨']})</button>
+                <button class="filter-btn ${currentStatusFilter === '出貨' ? 'active' : ''}" onclick="filterStatus('出貨', event)">出貨 (${statusCounts['出貨']})</button>
+                <button class="filter-btn ${currentStatusFilter === '到貨' ? 'active' : ''}" onclick="filterStatus('到貨', event)">到貨 (${statusCounts['到貨']})</button>
+                <button class="filter-btn ${currentStatusFilter === '完成' ? 'active' : ''}" onclick="filterStatus('完成', event)">完成 (${statusCounts['完成']})</button>
+            `;
+
+            // 5. 產生並渲染「IP 分類 Filters」按鈕
             const filterContainer = document.getElementById('ip-filters');
-            filterContainer.innerHTML = `<button class="filter-btn ${currentIPFilter === 'all' ? 'active' : ''}" onclick="filterIP('all', event)">全部</button>`;
+            
+            // 計算當前狀態過濾下的總件數（例如：當前在「進行中」，全部 IP 合共就是 totalOngoing 咁多件）
+            let currentStatusTotal = currentStatusFilter === 'all' ? totalAll : (currentStatusFilter === 'ongoing' ? totalOngoing : statusCounts[currentStatusFilter]);
+            
+            // 首先放「全部」按鈕
+            filterContainer.innerHTML = `<button class="filter-btn ${currentIPFilter === 'all' ? 'active' : ''}" onclick="filterIP('all', event)">全部 (${currentStatusTotal})</button>`;
+            
+            // 遍歷所有 IP 分類，進行智能顯示
             ipSettings.forEach(ip => {
-                const iconImg = ip.pic ? `<img src="${ip.pic}" class="square-badge-icon" style="margin-right:4px;">` : '';
-                filterContainer.innerHTML += `<button class="filter-btn ${currentIPFilter === ip.id ? 'active' : ''}" onclick="filterIP('${ip.id}', event)">${iconImg}${ip.name}</button>`;
+                const count = ipCounts[ip.id] || 0;
+                
+                // 💡 智能顯示邏輯：
+                // 1. 如果該 IP 底下有谷子（count > 0），或者用戶剛好正選中（active）呢個 IP，就顯示出來。
+                // 2. 如果該 IP 件數為 0，且用戶無選中佢，就自動隱藏（不產生按鈕），令 Filter 欄保持乾淨！
+                if (count > 0 || currentIPFilter === ip.id) {
+                    const iconImg = ip.pic ? `<img src="${ip.pic}" class="square-badge-icon" style="margin-right:4px;">` : '';
+                    const countDisplay = count > 0 ? `(${count})` : ''; // 如果是選中但剛好無件數（例如切換狀態後），就不顯示括號數字
+                    
+                    filterContainer.innerHTML += `<button class="filter-btn ${currentIPFilter === ip.id ? 'active' : ''}" onclick="filterIP('${ip.id}', event)">${iconImg}${ip.name}${countDisplay}</button>`;
+                }
             });
         }
+
 
         /* --- IP 新增與修改全局連動邏輯 --- */
         function startEditIp(id) {
@@ -1694,15 +1753,18 @@
             });
         }
 
-        function filterStatus(status, event) {
-            currentStatusFilter = status; document.querySelectorAll('#status-filters .filter-btn').forEach(btn => btn.classList.remove('active'));
-            if (event) event.target.classList.add('active'); render();
+                function filterStatus(status, event) {
+            currentStatusFilter = status;
+            renderFilters(); // ⬅️ 確保有呢行，切換時即時重新計數
+            render();
         }
 
         function filterIP(ip, event) {
-            currentIPFilter = ip; document.querySelectorAll('#ip-filters .filter-btn').forEach(btn => btn.classList.remove('active'));
-            if (event) event.target.classList.add('active'); render();
+            currentIPFilter = ip;
+            renderFilters(); // ⬅️ 確保有呢行，切換時即時重新計數
+            render();
         }
+
 
         function openModal(action, index = null) {
             const modal = document.getElementById('goods-modal'); document.getElementById('goods-form').reset();
