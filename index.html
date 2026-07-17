@@ -722,10 +722,9 @@
             animation: fadeInBg 0.2s ease-out forwards;
         }
 
-        /* 2. 彈窗白框本體：一打開就會自動觸發由下往上的 slideUpFade 動畫 */
         .modal-content {
             background-color: var(--card-bg);
-            padding: 20px;
+            padding: 6px 16px 16px;                     /* 💡 稍微縮減 padding，騰出更多垂直空間 */
             border-radius: 16px;
             width: 90%;
             max-width: 400px;
@@ -733,10 +732,10 @@
             /* 💡 綁定向上滑動動畫 */
             animation: slideUpFade 0.25s cubic-bezier(0.25, 1, 0.5, 1) forwards;
 
-            /* 💡 關鍵新增：限制手機版高度並允許內部滾動 */
-            max-height: 85vh;                  /* 限制最大高度為螢幕高度的 85%，留點上下呼吸空間 */
-            overflow-y: auto;                  /* 當內容超出 85% 時，自動啟用垂直滾動條 */
-            -webkit-overflow-scrolling: touch; /* 讓 iOS Safari 手指滑動時有極致順滑感 */
+            /* 🎯 終極高度滾動限制 */
+            max-height: 75dvh;                 /* 💡 改用 75dvh，確保在所有矮螢幕手機上都能完美顯示 */
+            overflow-y: auto !important;       /* 💡 強制啟用垂直滾動 */
+            -webkit-overflow-scrolling: touch; /* 讓 iOS 滑動極致順滑 */
         }
 
         /* 💡 關鍵新增：當 Modal 被加入 .active class 時，由 none 變為 flex 顯示出來 */
@@ -1937,9 +1936,6 @@
         }
 
 
-
-        let scrollPosition = 0; // 用來記錄打開彈窗前的主頁捲動高度
-
         function openModal(action, index = null) {
             const modal = document.getElementById('goods-modal'); 
             document.getElementById('goods-form').reset();
@@ -1948,9 +1944,8 @@
             renderFormIpTags(); 
             renderFormPlatforms();
 
-            // 帶入原本的 Edit 數據邏輯 (保持你原本寫的，此處省略...)
+            // 帶入原本的 Edit 數據邏輯
             if (action === 'edit' && index !== null) {
-                // ... 你原本的 edit 帶入邏輯 ...
                 document.getElementById('modal-action-title').innerText = '修改谷子記錄';
                 const item = goodsList[index]; document.getElementById('edit-index').value = index;
                 document.getElementById('form-item').value = item.item;
@@ -1975,7 +1970,6 @@
                 }
                 calculateConvertedPrice();
             } else {
-                // ... 你原本的 add 帶入邏輯 ...
                 document.getElementById('modal-action-title').innerText = '新增谷子記錄'; document.getElementById('edit-index').value = '';
                 selectedFormIPs = ipSettings.length > 0 ? [ipSettings[0].id] : ['OTHERS']; updateFormIPClasses();
                 document.getElementById('form-date').value = new Date().toISOString().split('T')[0];
@@ -1984,10 +1978,8 @@
                 if (platformSettings.length > 0) document.getElementById('form-platform').value = platformSettings[0].id;
             }
 
-            // 💡 關鍵鎖死底層：記錄當前主頁位置，並鎖定 body 捲動
-            scrollPosition = window.pageYOffset;
-            document.body.style.top = `-${scrollPosition}px`;
-            document.body.classList.add('modal-open');
+            // 💡 修正：直接用簡單的 overflow: hidden，避開 fixed 定位產生的排版高度 Bug
+            document.body.style.overflow = 'hidden';
 
             modal.classList.add('active'); 
         }
@@ -1996,10 +1988,8 @@
             const modal = document.getElementById('goods-modal');
             modal.classList.remove('active'); 
 
-            // 💡 關鍵解鎖底層：恢復 body 捲動，並跳回原本的捲動位置
-            document.body.classList.remove('modal-open');
-            document.body.style.top = '';
-            window.scrollTo(0, scrollPosition);
+            // 💡 修正：恢復 body 滾動
+            document.body.style.overflow = '';
         }
         
         function saveGoods(event) {
