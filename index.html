@@ -658,17 +658,17 @@
             display: flex !important;
         }
 
-        /* 修改 Modal 內容盒 */
         .modal-content {
             background: white;
             width: 100%;
-            /* 💡 使用 dvh 確保喺 Safari 網頁版會自動扣除頂底工具欄，唔會再過大 */
-            height: 85dvh; 
+            /* 💡 重點改動 1：高度改為自動適應，不再強制壓扁 */
+            height: auto; 
+            /* 💡 重點改動 2：最大高度限制為螢幕的 90%，防止撐出螢幕外 */
+            max-height: 90dvh; 
             border-top-left-radius: 16px;
             border-top-right-radius: 16px;
-            /* 調整 padding，底部預留空位畀儲存按鈕 */
-            padding: 16px 20px 100px 20px; 
-            /* 確保彈窗內部可以獨立極流暢地滑動 */
+            /* 💡 底部 padding 設為 40px，確保儲存按鈕下方有足夠的留白 */
+            padding: 16px 20px 40px 20px; 
             overflow-y: auto;
             -webkit-overflow-scrolling: touch; 
             box-shadow: 0 -5px 20px rgba(0,0,0,0.15);
@@ -677,17 +677,14 @@
             flex-direction: column;
         }
 
+        /* 1. 將原本 fixed 底欄的設定改成普通按鈕排版 */
         .modal-content .submit-btn {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            margin: 0;
-            border-radius: 0;
+            position: relative; /* ⬅️ 取消原本的 fixed，讓按鈕跟隨在備註下面 */
+            margin-top: 0px;   /* 與備註欄留點空隙 */
+            border-radius: 8px; /* 變回好看的圓角按鈕 */
+            font-size: 15px;
             padding: 12px;
-            font-size: 14px;
-            z-index: 10;
-            padding-bottom: calc(12px + env(safe-area-inset-bottom));
+            width: 100%;
         }
 
         /* 鎖定底層網頁捲動嘅 Class */
@@ -746,7 +743,7 @@
         }
 
         input[type="date"].form-control {
-          max-width: 210px;
+          width: 100%; /* 💡 讓它自動 100% 填滿左邊的格子，與右邊對稱 */
           max-height: 36px !important;
           text-align: center;
           display: block;
@@ -1087,12 +1084,14 @@
                     </div>
                 </div>
                 
-                <div id="conversion-preview" style="font-size:11px; color:var(--primary-color); margin-top:-8px; margin-bottom:12px; padding-left:2px;"></div>
+                <!-- 1. 將折算預覽嘅 margin-bottom 由 12px 縮減到 4px -->
+                <div id="conversion-preview" style="font-size:11px; color:var(--primary-color); margin-top:－8px; margin-bottom:2px; padding-left:2px;"></div>
 
-                <div class="form-group">
+                <!-- 2. 在 form-group 加上 margin-top:-4px 向上微調拉近 -->
+                <div class="form-group" style="margin-top:-4px; margin-bottom: 20px;">
                     <div class="checkbox-group">
                         <input type="checkbox" id="form-fullpaid">
-                        <label for="form-fullpaid" style="margin-bottom:0; font-size:13px; cursor:pointer;">已全付 (Full Paid)</label>
+                        <label for="form-fullpaid" style="margin-bottom:0; font-size:12px; cursor:pointer;">已全付 (Full Paid)</label>
                     </div>
                 </div>
 
@@ -1111,7 +1110,7 @@
                     <input type="hidden" id="form-pic">
                 </div>
 
-                <div class="form-group" style="padding-bottom: 20px;"> <label>備註</label>
+                <div class="form-group" style="padding-bottom: 10px;"> <label>備註</label>
                     <textarea id="form-remarks" class="form-control" rows="2" placeholder=""></textarea>
                 </div>
 
