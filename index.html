@@ -1843,8 +1843,8 @@
                     // 💡 新增：預設下面顯示的文字就是原本的名稱
                     let displayName = ip.name || ''; 
 
-                    // 利用正規表達式抓取名字最開頭的第一個 Emoji
-                    const emojiMatch = ip.name ? ip.name.match(/^[\u{1F300}-\u{1F64F}\u{1F680}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F900}-\u{1F9FF}\u{1F1E6}-\u{1F1FF}]/u) : null;
+                    // 💡 終極修正：使用現代 JavaScript 萬能天網，只要是 Emoji（不論是圖案還是符號心心）通通精準捕捉！
+                    const emojiMatch = ip.name ? ip.name.match(/^[\p{Emoji_Presentation}\p{Extended_Pictographic}]/u) : null;
 
                     if (ip.pic) {
                         innerContent = `<img src="${ip.pic}">`;
