@@ -29,6 +29,11 @@
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
         }
 
+        /* 💡 核心：直接加喺呢個位置，禁用整個網頁嘅橡皮筋回彈效果 */
+        html, body {
+            overscroll-behavior-y: none;
+        }
+
         body {
             background-color: var(--bg-color);
             color: var(--text-color);
