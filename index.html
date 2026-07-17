@@ -339,12 +339,129 @@
             align-items: center;
         }
 
-        .filter-btn.active {
+        /* 僅保留給非狀態區的通用過濾按鈕選中效果 */
+        :not(#status-filters) > .filter-btn.active {
             background: var(--primary-color);
             color: white;
             border-color: var(--primary-color);
         }
 
+        /* 🎯 小紅書風狀態 Tab 欄容器 */
+        #status-filters {
+            border-bottom: 1px solid var(--border-color); /* 保留很淡的底線分割線 */
+            padding-bottom: 0px;
+            margin-bottom: 8px;
+            background: transparent; /* 💡 改成透明，直接透出你原本手帳的粉嫩底色 */
+            padding: 8px 4px 0px 4px;
+        }
+        
+        /* 🎯 小紅書風狀態 Tab 按鈕（預設：未 active） */
+        #status-filters .filter-btn {
+            background: transparent !important;
+            border: none !important;
+            border-radius: 0 !important;
+            padding: 8px 12px 10px 12px !important;
+            font-size: 12px; /* 字體稍微優化 */
+            color: var(--text-light) !important; /* 未選中時文字顏色變淡 */
+            font-weight: normal !important;
+            position: relative;
+            transition: all 0.15s ease;
+        }
+        
+        /* 🎯 小紅書風狀態 Tab 按鈕（Active 狀態：Highlight + Bold + 紅色底線） */
+        #status-filters .filter-btn.active {
+            background: transparent !important; /* 確保不被主色覆蓋背景 */
+            color: var(--text-color) !important; /* 選中時文字變深色 */
+            font-weight: bold !important;        /* 💡 Highlight 粗體 */
+        }
+        
+        /* 💡 使用偽元素繪製精緻的紅色短底線 */
+        #status-filters .filter-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 15%;  /* 讓底線縮短一點，置中貼合字體 */
+            width: 70%;
+            height: 3px; /* 底線厚度 */
+            background-color: var(--primary-color); /* 使用你的主色粉紅/紅色 */
+            border-radius: 2px;
+        }
+
+        /* 🎯 讓整個 IP 分類欄支援圓形排版 */
+#ip-filters {
+    display: flex;
+    gap: 12px; /* 圓形按鈕之間留點舒服的空隙 */
+    padding: 4px 8px;
+    align-items: flex-start;
+}
+
+/* 🎯 將 IP 按鈕徹底改造成「圓形大金剛」 */
+#ip-filters .filter-btn {
+    display: inline-flex;
+    flex-direction: column; /* 💡 關鍵：改為垂直排列（上圖下字） */
+    align-items: center;
+    justify-content: center;
+    background: transparent !important; /* 攞走原本的白底膠囊框 */
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 64px;  /* 固定寬度，方便對齊 */
+    min-width: 64px;
+    cursor: pointer;
+    color: var(--text-light) !important;
+}
+
+/* 🎯 選中（Active）時的效果：字體變深色 */
+#ip-filters .filter-btn.active {
+    color: var(--text-color) !important;
+}
+
+/* 🎯 外層圓形容器（無論有冇圖，都維持一個漂亮圓圈） */
+#ip-filters .ip-circle-wrapper {
+    width: 46px;   /* 圓圈大小 */
+    height: 46px;
+    border-radius: 50%; /* 💡 徹底變成正圓形 */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 4px; /* 與下方細字的距離 */
+    font-size: 11px;
+    font-weight: bold;
+    overflow: hidden; /* 確保圖片如果填滿時，超出的地方會被圓形裁剪 */
+    border: 1px solid var(--border-color);
+    transition: all 0.2s ease;
+}
+
+/* 🎯 當選中（Active）時，圓圈加粗框線以示區別 */
+#ip-filters .filter-btn.active .ip-circle-wrapper {
+    border: 2.5px solid var(--primary-color) !important;
+    transform: scale(1.05); /* 輕微放大，更有動態感 */
+}
+
+/* 🎯 圓圈內的圖片設定（1:1 還原你的要求） */
+#ip-filters .ip-circle-wrapper img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* 💡 得 Icon 時，成張圖完美填滿個圓形 */
+}
+
+/* 🎯 下方的超細名字 */
+#ip-filters .ip-circle-text {
+    font-size: 10px; /* 💡 字勁細 */
+    line-height: 1.2;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 100%;
+}
+
+/* 🎯 選中時文字變粗 */
+#ip-filters .filter-btn.active .ip-circle-text {
+    font-weight: bold;
+}
+
+      
         /* Sorting Select Styling */
         .sort-select {
             background: var(--primary-light);
@@ -672,10 +789,9 @@
             cursor: pointer;
             box-shadow: 0 2px 8px rgba(216, 92, 128, 0.3);
             transition: transform 0.2s;
-            /* 💡 拿走原本的 font-size: 22px; */
         }
 
-        /* 💡 新增：控制 SVG 十字的大小（高寬 18px 是最配 40px 按鈕的黃金比例） */
+        /* 💡 新增：控制 SVG 十字的大小 */
         .add-btn svg {
             width: 18px;
             height: 18px;
@@ -714,7 +830,6 @@
         }
 
         /* Modal styling */
-        /* 1. 彈窗遮罩背景：一設為 display: flex 就会自動觸發 fadeInBg 動畫 */
         .modal {
             display: none; 
             position: fixed;
@@ -726,7 +841,6 @@
             z-index: 10000;
             justify-content: center;
             align-items: center;
-            /* 💡 綁定淡入動畫 */
             animation: fadeInBg 0.2s ease-out forwards;
         }
 
@@ -737,7 +851,6 @@
             width: 90%;
             max-width: 400px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-            /* 💡 綁定向上滑動動畫 */
             animation: slideUpFade 0.25s cubic-bezier(0.25, 1, 0.5, 1) forwards;
 
             /* 🎯 終極高度滾動限制 */
@@ -746,38 +859,24 @@
             -webkit-overflow-scrolling: touch; /* 讓 iOS 滑動極致順滑 */
         }
 
-        /* 💡 關鍵新增：當 Modal 被加入 .active class 時，由 none 變為 flex 顯示出來 */
         .modal.active {
             display: flex !important;
         }
         
-        /* 💡 新增：遮罩背景淡入動畫 */
         @keyframes fadeInBg {
-            from {
-                background-color: rgba(0, 0, 0, 0);
-            }
-            to {
-                background-color: rgba(0, 0, 0, 0.4);
-            }
+            from { background-color: rgba(0, 0, 0, 0); }
+            to { background-color: rgba(0, 0, 0, 0.4); }
         }
         
-        /* 💡 新增：白框由下往上升起並淡入動畫 */
         @keyframes slideUpFade {
-            from {
-                transform: translateY(80px);
-                opacity: 0;
-            }
-            to {
-                transform: translateY(0);
-                opacity: 1;
-            }
+            from { transform: translateY(80px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
         }
 
-        /* 1. 將原本 fixed 底欄的設定改成普通按鈕排版 */
         .modal-content .submit-btn {
-            position: relative; /* ⬅️ 取消原本的 fixed，讓按鈕跟隨在備註下面 */
-            margin-top: 0px;   /* 與備註欄留點空隙 */
-            border-radius: 8px; /* 變回好看的圓角按鈕 */
+            position: relative; 
+            margin-top: 0px;   
+            border-radius: 8px; 
             font-size: 15px;
             padding: 12px;
             width: 100%;
@@ -786,7 +885,7 @@
         /* 鎖定底層網頁捲動嘅 Class */
         body.modal-open {
             overflow: hidden !important;
-            position: fixed !important; /* 💡 強制鎖死 Safari 網頁底層 */
+            position: fixed !important; 
             width: 100% !important;
             height: 100% !important;
         }
@@ -839,7 +938,7 @@
         }
 
         input[type="date"].form-control {
-          width: 100%; /* 💡 讓它自動 100% 填滿左邊的格子，與右邊對稱 */
+          width: 100%; 
           max-height: 36px !important;
           text-align: center;
           display: block;
@@ -1070,18 +1169,11 @@
 
         <div class="filter-section">
             <div>
-                <div class="filter-row-label">狀態</div>
-                <div class="filter-row" id="status-filters">
-                    <button class="filter-btn active" onclick="filterStatus('ongoing', event)">進行中</button>
-                    <button class="filter-btn" onclick="filterStatus('all', event)">全部</button>
-                    <button class="filter-btn" onclick="filterStatus('待出貨', event)">待出貨</button>
-                    <button class="filter-btn" onclick="filterStatus('出貨', event)">出貨</button>
-                    <button class="filter-btn" onclick="filterStatus('到貨', event)">到貨</button>
-                    <button class="filter-btn" onclick="filterStatus('完成', event)">完成</button>
-                </div>
+                <!-- 💡 由 JS 在 render 內動態計算並刷新生成小紅書式 Tab 欄 -->
+                <div class="filter-row" id="status-filters"></div>
             </div>
             <div>
-                <div class="filter-row-label">IP分類</div>
+                <div>
                 <div class="filter-row-container">
                     <div class="filter-row" id="ip-filters"></div>
                     <select class="sort-select" id="sort-select" onchange="changeSortMode(this.value)">
@@ -1099,7 +1191,6 @@
 
     <div class="bottom-bar">
         <span style="cursor:pointer;" onclick="exportData()">💾 備份</span>
-        <!-- 💡 移除了 onclick 裡面多餘的 event.preventDefault(); 並且補上 type="button" 避開 Form 提交衝突 -->
         <button type="button" class="add-btn" onclick="openModal('add')">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round">
                 <line x1="12" y1="5" x2="12" y2="19"></line>
@@ -1150,11 +1241,11 @@
                     <div class="form-group">
                         <label>狀態</label>
                         <select id="form-status" class="form-control">
-                            <option value="待出貨">待出貨</option>
-                            <option value="出貨">出貨</option>
-                            <option value="到貨">到貨</option>
-                            <option value="完成">完成</option>
-                        </select>
+                          <option value="待發貨">待發貨</option>
+                          <option value="待收貨">待收貨</option>
+                          <option value="已到貨">已到貨</option>
+                          <option value="完成">完成</option>
+                      </select>
                     </div>
                     <div class="form-group">
                         <label>購買平台</label>
@@ -1186,10 +1277,8 @@
                     </div>
                 </div>
                 
-                <!-- 1. 將折算預覽嘅 margin-bottom 由 12px 縮減到 4px -->
                 <div id="conversion-preview" style="font-size:11px; color:var(--primary-color); margin-top:-8px; margin-bottom:2px; padding-left:2px;"></div>
 
-                <!-- 2. 在 form-group 加上 margin-top:-4px 向上微調拉近 -->
                 <div class="form-group" style="margin-top:-4px; margin-bottom: 20px;">
                     <div class="checkbox-group">
                         <input type="checkbox" id="form-fullpaid">
@@ -1239,7 +1328,7 @@
         ];
 
         const defaultData = [
-            { item: "Item 1", ip: ["IP1"], status: "待出貨", date: "2026-06-01", arrived: "2026年7月", paid: 100, currency: "HKD", balance: 180, fullpaid: false, platform: "小紅書", pic: "", remarks: "" }
+            { item: "Item 1", ip: ["IP1"], status: "待發貨", date: "2026-06-01", arrived: "2026年7月", paid: 100, currency: "HKD", balance: 180, fullpaid: false, platform: "小紅書", pic: "", remarks: "" }
         ];
 
         let goodsList;
@@ -1271,15 +1360,17 @@
             goodsList = defaultData; globalRate = 1.16; ipSettings = defaultIpSettings; platformSettings = defaultPlatformSettings; headerTitle = "🍡 谷子手帳 Goods Tracker"; currentSortMode = 'arrived_desc';
         }
 
+        // 統一在此處處理歷史數據升級轉名
         goodsList.forEach(item => {
-            if (item.status === '已出貨') item.status = '出貨';
-            if (item.status === '已到貨') item.status = '到貨';
+            if (item.status === '已出貨' || item.status === '出貨') item.status = '待收貨';
+            if (item.status === '已到貨' || item.status === '到貨') item.status = '已到貨';
+            if (item.status === '待出貨') item.status = '待發貨';
             if (typeof item.ip === 'string') item.ip = [item.ip];
             if (!item.ip) item.ip = ["OTHERS"];
         });
 
         let selectedFormIPs = [];
-        let currentStatusFilter = 'ongoing';
+        let currentStatusFilter = 'all'; 
         let currentIPFilter = 'all';
 
         document.getElementById('global-rate').value = globalRate.toFixed(2);
@@ -1291,9 +1382,8 @@
             const sortSelect = document.getElementById('sort-select');
             if (sortSelect) sortSelect.value = currentSortMode;
 
-            renderFilters();
             renderSettingsManager();
-            render();
+            render(); // 拔除衝突的 renderFilters()，由龍頭 render() 一步繪製到位
         });
 
         function updateGlobalRate() {
@@ -1333,10 +1423,8 @@
             return (((r*299)+(g*587)+(b*114))/1000 >= 128) ? '#4a3e41' : '#ffffff';
         }
 
-        /* --- 新增：萬能 Base64 畫布自動縮小壓縮函數 --- */
         function compressImage(base64Str, maxWidth = 500, quality = 0.7) {
             return new Promise((resolve) => {
-                // 如果不是 Base64 格式，直接返回
                 if (!base64Str || !base64Str.startsWith('data:image')) {
                     resolve(base64Str);
                     return;
@@ -1345,36 +1433,26 @@
                 img.onload = function() {
                     let width = img.width;
                     let height = img.height;
-                    
-                    // 如果圖片已經很小，只做格式轉化與畫質輕量壓縮，防止尺寸放大
                     if (width > maxWidth) {
                         height = Math.round((height * maxWidth) / width);
                         width = maxWidth;
                     }
-
                     const canvas = document.createElement('canvas');
-                    canvas.width = width;
-                    canvas.height = height;
+                    canvas.width = width; canvas.height = height;
                     const ctx = canvas.getContext('2d');
                     ctx.drawImage(img, 0, 0, width, height);
-                    
-                    // 導出為高壓縮率的 JPEG 格式，極大縮減體積
                     const compressedBase64 = canvas.toDataURL('image/jpeg', quality);
                     resolve(compressedBase64);
                 };
-                img.onerror = function() {
-                    resolve(base64Str); // 若加載出錯，返回原圖避開崩潰
-                };
+                img.onerror = function() { resolve(base64Str); };
                 img.src = base64Str;
             });
         }
 
-        /* --- IP Icon 處理 --- */
         function handleIpIconUpload(event) {
             const file = event.target.files[0]; if (!file) return;
             const reader = new FileReader();
             reader.onload = function(e) {
-                // 自動將 IP 頭貼進行超小規格壓縮 (最大寬度 100px)
                 compressImage(e.target.result, 100, 0.7).then(compressed => {
                     document.getElementById('new-ip-pic').value = compressed;
                     document.getElementById('new-ip-icon-preview').src = compressed;
@@ -1394,12 +1472,10 @@
             document.getElementById('ip-icon-clear-btn').style.display = 'none';
         }
 
-        /* --- Platform Icon 處理 --- */
         function handlePlatformIconUpload(event) {
             const file = event.target.files[0]; if (!file) return;
             const reader = new FileReader();
             reader.onload = function(e) {
-                // 自動將平台 Logo 進行超小規格壓縮 (最大寬度 100px)
                 compressImage(e.target.result, 100, 0.7).then(compressed => {
                     document.getElementById('new-platform-pic').value = compressed;
                     document.getElementById('new-platform-icon-preview').src = compressed;
@@ -1420,7 +1496,6 @@
         }
 
         function renderSettingsManager() {
-            // IP 清單渲染
             const ipContainer = document.getElementById('ip-manager-list'); ipContainer.innerHTML = '';
             ipSettings.forEach(ip => {
                 const iconTag = ip.pic ? `<img src="${ip.pic}" class="square-badge-icon">` : '';
@@ -1437,7 +1512,6 @@
                     </div>`;
             });
 
-            // 平台清單渲染
             const platformContainer = document.getElementById('platform-manager-list'); platformContainer.innerHTML = '';
             platformSettings.forEach(plat => {
                 const iconTag = plat.pic ? `<img src="${plat.pic}" class="platform-tag-icon">` : '🛒 ';
@@ -1452,75 +1526,6 @@
             });
         }
 
-                function renderFilters() {
-            // 1. 初始化所有計數變量
-            let totalOngoing = 0;
-            let totalAll = goodsList.length;
-            let statusCounts = { '待出貨': 0, '出貨': 0, '到貨': 0, '完成': 0 };
-            
-            // 2. 初始化 IP 分類的計數（預設全部為 0）
-            let ipCounts = {};
-            ipSettings.forEach(ip => ipCounts[ip.id] = 0);
-            ipCounts['OTHERS'] = 0;
-
-            // 3. 遍歷手帳列表，即時計算狀態同 IP 數量
-            goodsList.forEach(item => {
-                if (item.status !== '完成') totalOngoing++;
-                if (statusCounts.hasOwnProperty(item.status)) statusCounts[item.status]++;
-                
-                // 💡 核心連動：只有符合當前「狀態過濾」嘅谷子，先會計入 IP 分類數量中
-                let matchStatus = currentStatusFilter === 'all' ? true : (currentStatusFilter === 'ongoing' ? item.status !== '完成' : item.status === currentStatusFilter);
-                
-                if (matchStatus) {
-                    const itemIps = Array.isArray(item.ip) ? item.ip : [item.ip || 'OTHERS'];
-                    itemIps.forEach(ipId => {
-                        if (ipCounts.hasOwnProperty(ipId)) {
-                            ipCounts[ipId]++;
-                        } else {
-                            ipCounts['OTHERS']++;
-                        }
-                    });
-                }
-            });
-
-            // 4. 產生並渲染「狀態 Filters」按鈕（帶計數）
-            const statusContainer = document.getElementById('status-filters');
-            statusContainer.innerHTML = `
-                <button class="filter-btn ${currentStatusFilter === 'ongoing' ? 'active' : ''}" onclick="filterStatus('ongoing', event)">進行中 (${totalOngoing})</button>
-                <button class="filter-btn ${currentStatusFilter === 'all' ? 'active' : ''}" onclick="filterStatus('all', event)">全部 (${totalAll})</button>
-                <button class="filter-btn ${currentStatusFilter === '待出貨' ? 'active' : ''}" onclick="filterStatus('待出貨', event)">待出貨 (${statusCounts['待出貨']})</button>
-                <button class="filter-btn ${currentStatusFilter === '出貨' ? 'active' : ''}" onclick="filterStatus('出貨', event)">出貨 (${statusCounts['出貨']})</button>
-                <button class="filter-btn ${currentStatusFilter === '到貨' ? 'active' : ''}" onclick="filterStatus('到貨', event)">到貨 (${statusCounts['到貨']})</button>
-                <button class="filter-btn ${currentStatusFilter === '完成' ? 'active' : ''}" onclick="filterStatus('完成', event)">完成 (${statusCounts['完成']})</button>
-            `;
-
-            // 5. 產生並渲染「IP 分類 Filters」按鈕
-            const filterContainer = document.getElementById('ip-filters');
-            
-            // 計算當前狀態過濾下的總件數（例如：當前在「進行中」，全部 IP 合共就是 totalOngoing 咁多件）
-            let currentStatusTotal = currentStatusFilter === 'all' ? totalAll : (currentStatusFilter === 'ongoing' ? totalOngoing : statusCounts[currentStatusFilter]);
-            
-            // 首先放「全部」按鈕
-            filterContainer.innerHTML = `<button class="filter-btn ${currentIPFilter === 'all' ? 'active' : ''}" onclick="filterIP('all', event)">全部 (${currentStatusTotal})</button>`;
-            
-            // 遍歷所有 IP 分類，進行智能顯示
-            ipSettings.forEach(ip => {
-                const count = ipCounts[ip.id] || 0;
-                
-                // 💡 智能顯示邏輯：
-                // 1. 如果該 IP 底下有谷子（count > 0），或者用戶剛好正選中（active）呢個 IP，就顯示出來。
-                // 2. 如果該 IP 件數為 0，且用戶無選中佢，就自動隱藏（不產生按鈕），令 Filter 欄保持乾淨！
-                if (count > 0 || currentIPFilter === ip.id) {
-                    const iconImg = ip.pic ? `<img src="${ip.pic}" class="square-badge-icon" style="margin-right:4px;">` : '';
-                    const countDisplay = count > 0 ? `(${count})` : ''; // 如果是選中但剛好無件數（例如切換狀態後），就不顯示括號數字
-                    
-                    filterContainer.innerHTML += `<button class="filter-btn ${currentIPFilter === ip.id ? 'active' : ''}" onclick="filterIP('${ip.id}', event)">${iconImg}${ip.name}${countDisplay}</button>`;
-                }
-            });
-        }
-
-
-        /* --- IP 新增與修改全局連動邏輯 --- */
         function startEditIp(id) {
             const ip = ipSettings.find(item => item.id === id); if (!ip) return;
             document.getElementById('edit-ip-id').value = ip.id;
@@ -1550,13 +1555,11 @@
                 if (ip) {
                     const oldId = ip.id;
                     const newId = name ? name.toUpperCase().replace(/\s+/g, '_') : 'IP_' + Date.now();
-                    
                     goodsList.forEach(item => {
                         if (Array.isArray(item.ip)) {
                             item.ip = item.ip.map(val => val === oldId ? newId : val);
                         }
                     });
-                    
                     ip.id = newId; ip.name = name; ip.color = color; ip.textColor = getContrastYIQ(color); ip.pic = pic;
                     if (currentIPFilter === oldId) currentIPFilter = newId;
                 }
@@ -1569,7 +1572,7 @@
             }
 
             try { localStorage.setItem('goodsTrackerIpSettings', JSON.stringify(ipSettings)); } catch(e){}
-            nameInput.value = ''; clearIpIconUpload(); saveData(); renderSettingsManager(); renderFilters();
+            nameInput.value = ''; clearIpIconUpload(); saveData(); renderSettingsManager();
         }
 
         function updateIpColor(id, newColor) {
@@ -1577,7 +1580,7 @@
             if (ip) {
                 ip.color = newColor; ip.textColor = getContrastYIQ(newColor);
                 try { localStorage.setItem('goodsTrackerIpSettings', JSON.stringify(ipSettings)); } catch(e){}
-                renderSettingsManager(); renderFilters(); render();
+                renderSettingsManager(); render();
             }
         }
 
@@ -1588,11 +1591,10 @@
                 ipSettings = ipSettings.filter(ip => ip.id !== id);
                 if (currentIPFilter === id) currentIPFilter = 'all';
                 try { localStorage.setItem('goodsTrackerIpSettings', JSON.stringify(ipSettings)); } catch(e){}
-                saveData(); renderSettingsManager(); renderFilters();
+                saveData(); renderSettingsManager();
             }
         }
 
-        /* --- 購買平台 新增與修改全局連動邏輯 --- */
         function startEditPlatform(id) {
             const plat = platformSettings.find(item => item.id === id); if (!plat) return;
             document.getElementById('edit-platform-id').value = plat.id;
@@ -1690,19 +1692,18 @@
         function toggleStatus(index, event) {
             if (event) event.stopPropagation();
             const item = goodsList[index];
-            if (item.status === '待出貨') item.status = '出貨';
-            else if (item.status === '出貨') item.status = '到貨';
-            else if (item.status === '到貨') item.status = '完成';
-            else item.status = '待出貨';
+            if (item.status === '待發貨') item.status = '待收貨';
+            else if (item.status === '待收貨') item.status = '已到貨';
+            else if (item.status === '已到貨') item.status = '完成';
+            else item.status = '待發貨';
             saveData();
         }
 
-        // 修改：在 saveData 發生儲存空間不足時，提供最明確的報錯提示
         function saveData() {
             try { 
                 localStorage.setItem('goodsTrackerData', JSON.stringify(goodsList)); 
             } catch(e) {
-                alert('⚠️ 手機暫存空間（5MB）已爆滿！儲存失敗。\n\n原因：你上傳或導入的相片過多或體積過大。\n\n免驚！宜家你可以點擊底部「備份」下載備份，然後在系統設定點擊最底部的「還原手帳」清空數據，再重新「導入」一次。新系統會自動幫你將所有相片壓縮縮小 100 倍！');
+                alert('⚠️ 手機暫存空間已爆滿！儲存失敗。');
             }
             render();
         }
@@ -1743,12 +1744,10 @@
             preview.innerHTML = parts.length > 0 ? `💡 預覽折算：` + parts.join(' | ') : '';
         }
 
-        /* --- 修改：上傳相片時自動啟用 500px 壓縮處理 --- */
         function handleImageUpload(event) {
             const file = event.target.files[0]; if (!file) return;
             const reader = new FileReader();
             reader.onload = function(e) {
-                // 自動將谷子截圖相片壓縮 (最大寬度 500px)
                 compressImage(e.target.result, 500, 0.7).then(compressed => {
                     document.getElementById('form-pic').value = compressed;
                     document.getElementById('pic-preview').innerHTML = `<img src="${compressed}">`;
@@ -1766,31 +1765,33 @@
             let imminent = 0, pending = 0, balTotalRMB = 0;
             const now = new Date(); const currentTimestamp = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
             goodsList.forEach(item => {
-                if (item.status !== '完成') { pending++; let arrTime = parseArrivalDate(item.arrived); if (arrTime !== null && arrTime <= currentTimestamp) imminent++; }
+                if (item.status !== '完成') { 
+                    pending++; 
+                    let arrTime = parseArrivalDate(item.arrived); 
+                    if (arrTime !== null && arrTime <= currentTimestamp) imminent++; 
+                }
                 const balInRMB = (item.balanceCurrency || 'RMB') === 'RMB' ? Number(item.balance || 0) : (Number(item.balance || 0) / globalRate);
                 balTotalRMB += balInRMB;
             });
             document.getElementById('imminent-count').innerText = imminent + " 件";
             document.getElementById('pending-count').innerText = pending + " 件";
-            document.getElementById('total-balance').innerText = `¥${balTotalRMB}`;
+            document.getElementById('total-balance').innerText = `¥${Math.round(balTotalRMB)}`;
         }
 
-                function render() {
-            // ================= 1. 即時重新計算所有計數 (Filters Count) =================
-            let totalOngoing = 0;
+        function render() {
+            // ================= 1. 即時重新計算所有新狀態與 IP 的數據計數 =================
             let totalAll = goodsList.length;
-            let statusCounts = { '待出貨': 0, '出貨': 0, '到貨': 0, '完成': 0 };
+            let statusCounts = { '待發貨': 0, '待收貨': 0, '已到貨': 0, '完成': 0 };
             
             let ipCounts = {};
             ipSettings.forEach(ip => ipCounts[ip.id] = 0);
             ipCounts['OTHERS'] = 0;
 
             goodsList.forEach(item => {
-                if (item.status !== '完成') totalOngoing++;
                 if (statusCounts.hasOwnProperty(item.status)) statusCounts[item.status]++;
                 
                 // IP 計數連動當前狀態
-                let matchStatus = currentStatusFilter === 'all' ? true : (currentStatusFilter === 'ongoing' ? item.status !== '完成' : item.status === currentStatusFilter);
+                let matchStatus = currentStatusFilter === 'all' ? true : item.status === currentStatusFilter;
                 if (matchStatus) {
                     const itemIps = Array.isArray(item.ip) ? item.ip : [item.ip || 'OTHERS'];
                     itemIps.forEach(ipId => {
@@ -1800,49 +1801,72 @@
                 }
             });
 
-            // ================= 2. 渲染狀態 Filters (0件自動隱藏) =================
+            // ================= 2. 渲染小紅書風格狀態 Tab Filters =================
             const statusContainer = document.getElementById('status-filters');
             let statusHTML = '';
             
-            // 進行中 & 全部 永遠顯示
-            statusHTML += `<button class="filter-btn ${currentStatusFilter === 'ongoing' ? 'active' : ''}" onclick="filterStatus('ongoing', event)">進行中 (${totalOngoing})</button>`;
+            // 全部 永遠顯示
             statusHTML += `<button class="filter-btn ${currentStatusFilter === 'all' ? 'active' : ''}" onclick="filterStatus('all', event)">全部 (${totalAll})</button>`;
             
-            // 其他狀態大於 0 或者正被選中才顯示
-            ['待出貨', '出貨', '到貨', '完成'].forEach(st => {
+            // 四個精簡化新狀態動態渲染（永遠顯示，但隱藏 0 的數字）
+            ['待發貨', '待收貨', '已到貨', '完成'].forEach(st => {
                 let c = statusCounts[st] || 0;
-                if (c > 0 || currentStatusFilter === st) {
-                    statusHTML += `<button class="filter-btn ${currentStatusFilter === st ? 'active' : ''}" onclick="filterStatus('${st}', event)">${st} (${c})</button>`;
-                }
+                // 💡 關鍵改動：如果數量大於 0 就顯示 (X)，如果是 0 就變成空文字
+                let countDisplay = c > 0 ? ` (${c})` : ''; 
+                
+                // 攞走咗原先 count > 0 才顯示的 if 限制，讓按鈕永遠留低
+                statusHTML += `<button class="filter-btn ${currentStatusFilter === st ? 'active' : ''}" onclick="filterStatus('${st}', event)">${st}${countDisplay}</button>`;
             });
+          
             statusContainer.innerHTML = statusHTML;
 
-            // ================= 3. 渲染 IP Filters (0件自動隱藏) =================
+            // ================= 3. 渲染 IP Filters (全新圓形金剛位版) =================
             const filterContainer = document.getElementById('ip-filters');
-            let currentStatusTotal = currentStatusFilter === 'all' ? totalAll : (currentStatusFilter === 'ongoing' ? totalOngoing : statusCounts[currentStatusFilter]);
+            let currentStatusTotal = currentStatusFilter === 'all' ? totalAll : (statusCounts[currentStatusFilter] || 0);
+                    
+            // 1. 先做「全部」按鈕 (無圖，純字，圓圈內放✨或全)
+            let ipHTML = `
+                <button class="filter-btn ${currentIPFilter === 'all' ? 'active' : ''}" onclick="filterIP('all', event)">
+                    <div class="ip-circle-wrapper" style="background-color: var(--primary-light); color: var(--primary-color); border-color: var(--primary-color);">✨</div>
+                    <div class="ip-circle-text">全部(${currentStatusTotal})</div>
+                </button>
+            `;
             
-            let ipHTML = `<button class="filter-btn ${currentIPFilter === 'all' ? 'active' : ''}" onclick="filterIP('all', event)">全部 (${currentStatusTotal})</button>`;
-            
+            // 2. 循環渲染各個 IP
             ipSettings.forEach(ip => {
                 let count = ipCounts[ip.id] || 0;
                 if (count > 0 || currentIPFilter === ip.id) {
-                    const iconImg = ip.pic ? `<img src="${ip.pic}" class="square-badge-icon" style="margin-right:4px;">` : '';
                     const countDisplay = count > 0 ? `(${count})` : '';
-                    ipHTML += `<button class="filter-btn ${currentIPFilter === ip.id ? 'active' : ''}" onclick="filterIP('${ip.id}', event)">${iconImg}${ip.name}${countDisplay}</button>`;
+                    let innerContent = '';
+                    let wrapperStyle = `background-color: ${ip.color}; color: ${ip.textColor || getContrastYIQ(ip.color)};`;
+
+                    // 💡 判斷邏輯：
+                    if (ip.pic) {
+                        // A. 如果有加 icon：就 icon 響上面，名字響 icon 下面
+                        // B. 如果得 icon（沒有名字）：圖片一樣會完美 cover 填滿圓圈
+                        innerContent = `<img src="${ip.pic}">`;
+                    } else {
+                        // C. 如果冇 icon：圓圈內顯示文字的第一個字（或者直接放簡寫），名字依舊在下面
+                        innerContent = ip.name ? ip.name.charAt(0) : '谷';
+                    }
+
+                    ipHTML += `
+                        <button class="filter-btn ${currentIPFilter === ip.id ? 'active' : ''}" onclick="filterIP('${ip.id}', event)">
+                            <div class="ip-circle-wrapper" style="${wrapperStyle}">${innerContent}</div>
+                            <div class="ip-circle-text">${ip.name}${countDisplay}</div>
+                        </button>
+                    `;
                 }
             });
             filterContainer.innerHTML = ipHTML;
 
-            // ================= 4. 原本的列表渲染代碼 (保持不變) =================
+            // ================= 4. 列表數據篩選與卡片渲染 =================
             calculateStats();
             const container = document.getElementById('goods-container'); 
             container.innerHTML = '';
             
-            // ... 你原本 render() 函數底下的所有代碼 (filteredList.filter, sort, forEach 等) ...
-
-            
             let filteredList = goodsList.filter(item => {
-                let statusMatch = currentStatusFilter === 'all' ? true : (currentStatusFilter === 'ongoing' ? item.status !== '完成' : item.status === currentStatusFilter);
+                let statusMatch = currentStatusFilter === 'all' ? true : item.status === currentStatusFilter;
                 let ipMatch = currentIPFilter === 'all' ? true : (Array.isArray(item.ip) ? item.ip.includes(currentIPFilter) : item.ip === currentIPFilter);
                 return statusMatch && ipMatch;
             });
@@ -1866,10 +1890,10 @@
                 const actualIndex = goodsList.indexOf(item); const card = document.createElement('div');
                 card.className = item.status === '完成' ? 'goods-card card-completed' : 'goods-card';
 
-                let statusClass = 'status-pending';
-                if (item.status === '出貨') statusClass = 'status-shipped';
-                if (item.status === '到貨') statusClass = 'status-arrived';
-                if (item.status === '完成') statusClass = 'status-completed';
+                let statusClass = 'status-pending'; // 待發貨用灰色
+                if (item.status === '待收貨') statusClass = 'status-shipped'; 
+                if (item.status === '已到貨') statusClass = 'status-arrived'; 
+                if (item.status === '完成') statusClass = 'status-completed'; 
                 
                 const isRMB = item.currency === 'RMB';
                 const originalPaidDisplay = `${isRMB ? '¥' : '$'}${Number(item.paid || 0).toFixed(2)}`;
@@ -1880,7 +1904,7 @@
                 itemIps.forEach(val => {
                     const ipSetting = ipSettings.find(ip => ip.id === val) || { name: val === 'OTHERS' ? '其他' : val, color: '#ecebeb', textColor: '#5c5556', pic: "" };
                     const iconTag = ipSetting.pic ? `<img src="${ipSetting.pic}" class="square-badge-icon">` : '';
-                    ipBadgesHTML += `<span class="ip-badge" style="background-color: ${ipSetting.color}; color: ${ipSetting.textColor || getContrastYIQ(ipSetting.color)};">${iconTag}${ipSetting.name}</span> `;
+                    ipBadgesHTML += `<span class="ip-badge" style="background-color: ${ipSetting.color}; color: ${ipSetting.textColor || getContrastYIQ(ipSetting.color)}">${iconTag}${ipSetting.name}</span> `;
                 });
 
                 const platSetting = platformSettings.find(p => p.id === item.platform);
@@ -1905,11 +1929,9 @@
                                 <span style="color: var(--text-light); font-size: 11px;">HKD <span class="total-cost-tag">${totalCostHKD.toFixed(2)}</span></span>
                             </div>
                             <div class="goods-meta" style="display: flex; flex-direction: column; gap: 4px;">
-                                <!-- 到貨日：調轉去上面，字體加粗加大 (12px) -->
                                 <span class="meta-item" style="font-size: 11px; font-weight: bold; color: var(--text-color);">
                                     📦 ${item.arrived || '未註明'} 到貨
                                 </span>
-                                <!-- 下單日：調轉去下面，字體縮細變淡 (10px) -->
                                 <span class="meta-item" style="font-size: 9px; color: var(--text-light); background: transparent; padding-left: 7.5px;">
                                     📅&nbsp;&nbsp;${item.date || '無日期'} 下單
                                 </span>
@@ -1935,14 +1957,13 @@
 
         function filterStatus(status, event) {
             currentStatusFilter = status;
-            render(); // ⬅️ 這裡只呼叫 render，讓 render 做龍頭
+            render(); 
         }
 
         function filterIP(ip, event) {
             currentIPFilter = ip;
-            render(); // ⬅️ 這裡只呼叫 render
+            render(); 
         }
-
 
         function openModal(action, index = null) {
             const modal = document.getElementById('goods-modal'); 
@@ -1952,7 +1973,6 @@
             renderFormIpTags(); 
             renderFormPlatforms();
 
-            // 帶入原本的 Edit 數據邏輯
             if (action === 'edit' && index !== null) {
                 document.getElementById('modal-action-title').innerText = '修改谷子記錄';
                 const item = goodsList[index]; document.getElementById('edit-index').value = index;
@@ -1986,17 +2006,13 @@
                 if (platformSettings.length > 0) document.getElementById('form-platform').value = platformSettings[0].id;
             }
 
-            // 💡 修正：直接用簡單的 overflow: hidden，避開 fixed 定位產生的排版高度 Bug
             document.body.style.overflow = 'hidden';
-
             modal.classList.add('active'); 
         }
 
         function closeModal() { 
             const modal = document.getElementById('goods-modal');
             modal.classList.remove('active'); 
-
-            // 💡 修正：恢復 body 滾動
             document.body.style.overflow = '';
         }
         
@@ -2039,7 +2055,6 @@
             } catch (err) { alert('備份失敗：' + err.message); }
         }
 
-        /* --- 修改：導入備份時，自動啟動「異步全相片壓縮功能」 --- */
         function importData() {
             const input = document.createElement('input'); input.type = 'file'; input.accept = '.json';
             input.onchange = e => {
@@ -2051,8 +2066,9 @@
                         if (incomingList.length === 0) return alert('格式錯誤，請上傳有效的備份 JSON 檔案。');
 
                         incomingList.forEach(item => {
-                            if (item.status === '已出貨') item.status = '出貨';
-                            if (item.status === '已到貨') item.status = '到貨';
+                            if (item.status === '已出貨' || item.status === '出貨') item.status = '待收貨';
+                            if (item.status === '已到貨' || item.status === '到貨') item.status = '已到貨';
+                            if (item.status === '待出貨') item.status = '待發貨';
                             if (typeof item.ip === 'string') item.ip = [item.ip];
                             if (!item.ip) item.ip = ["OTHERS"];
                         });
@@ -2061,109 +2077,66 @@
                         if (parsed.platformSettings) {
                             if (parsed.platformSettings.length > 0 && typeof parsed.platformSettings[0] === 'string') {
                                 incomingPlatformSettings = parsed.platformSettings.map(p => ({ id: p, name: p, pic: "" }));
-                            } else {
-                                incomingPlatformSettings = parsed.platformSettings;
-                            }
+                            } else { incomingPlatformSettings = parsed.platformSettings; }
                         }
 
                         let incomingIpSettings = parsed.ipSettings || [];
-                        incomingIpSettings.forEach(ip => {
-                            if (!ip.hasOwnProperty('pic')) ip.pic = "";
-                        });
+                        incomingIpSettings.forEach(ip => { if (!ip.hasOwnProperty('pic')) ip.pic = ""; });
 
                         const overwrite = !confirm('發現手帳記錄！\n\n【確定】將備份與現有記錄「合併」\n【取消】將備份「完全覆蓋」現有紀錄');
 
-                        // 💡 核心優化：開啟進度提示，異步批量壓縮導入檔案內的所有大型相片！
                         const compressTasks = [];
                         
-                        // 1. 壓縮物品相片
                         incomingList.forEach(item => {
                             if (item.pic && item.pic.startsWith('data:image')) {
-                                const task = compressImage(item.pic, 500, 0.7).then(compressed => {
-                                    item.pic = compressed;
-                                });
+                                const task = compressImage(item.pic, 500, 0.7).then(compressed => { item.pic = compressed; });
                                 compressTasks.push(task);
                             }
                         });
 
-                        // 2. 壓縮 IP 分類頭貼
                         incomingIpSettings.forEach(ip => {
                             if (ip.pic && ip.pic.startsWith('data:image')) {
-                                const task = compressImage(ip.pic, 100, 0.7).then(compressed => {
-                                    ip.pic = compressed;
-                                });
+                                const task = compressImage(ip.pic, 100, 0.7).then(compressed => { ip.pic = compressed; });
                                 compressTasks.push(task);
                             }
                         });
 
-                        // 3. 壓縮平台圖標
                         incomingPlatformSettings.forEach(plat => {
                             if (plat.pic && plat.pic.startsWith('data:image')) {
-                                const task = compressImage(plat.pic, 100, 0.7).then(compressed => {
-                                    plat.pic = compressed;
-                                });
+                                const task = compressImage(plat.pic, 100, 0.7).then(compressed => { plat.pic = compressed; });
                                 compressTasks.push(task);
                             }
                         });
 
-                        // 等待所有相片縮小壓縮完成後，再行寫入 LocalStorage
                         Promise.all(compressTasks).then(() => {
                             if (overwrite) {
                                 goodsList = incomingList;
-                                if (parsed.globalRate) { 
-                                    globalRate = parseFloat(parsed.globalRate); 
-                                    localStorage.setItem('goodsTrackerRate', globalRate); 
-                                }
-                                if (parsed.ipSettings) { 
-                                    ipSettings = incomingIpSettings; 
-                                    localStorage.setItem('goodsTrackerIpSettings', JSON.stringify(ipSettings)); 
-                                }
-                                if (incomingPlatformSettings.length > 0) { 
-                                    platformSettings = incomingPlatformSettings; 
-                                    localStorage.setItem('goodsTrackerPlatformSettings', JSON.stringify(platformSettings)); 
-                                }
-                                if (parsed.headerTitle) { 
-                                    headerTitle = parsed.headerTitle; 
-                                    localStorage.setItem('goodsTrackerHeaderTitle', headerTitle); 
-                                }
+                                if (parsed.globalRate) { globalRate = parseFloat(parsed.globalRate); localStorage.setItem('goodsTrackerRate', globalRate); }
+                                if (parsed.ipSettings) { ipSettings = incomingIpSettings; localStorage.setItem('goodsTrackerIpSettings', JSON.stringify(ipSettings)); }
+                                if (incomingPlatformSettings.length > 0) { platformSettings = incomingPlatformSettings; localStorage.setItem('goodsTrackerPlatformSettings', JSON.stringify(platformSettings)); }
+                                if (parsed.headerTitle) { headerTitle = parsed.headerTitle; localStorage.setItem('goodsTrackerHeaderTitle', headerTitle); }
                             } else {
                                 incomingList.forEach(inc => { 
-                                    if (!goodsList.some(ex => ex.item === inc.item && ex.date === inc.date && ex.paid === inc.paid)) {
-                                        goodsList.push(inc); 
-                                    }
+                                    if (!goodsList.some(ex => ex.item === inc.item && ex.date === inc.date && ex.paid === inc.paid)) { goodsList.push(inc); }
                                 });
                                 if (parsed.ipSettings) {
                                     incomingIpSettings.forEach(incIp => { 
-                                        if (!ipSettings.some(ex => ex.id === incIp.id)) {
-                                            ipSettings.push(incIp); 
-                                        } else {
-                                            let existing = ipSettings.find(ex => ex.id === incIp.id);
-                                            if (existing && !existing.pic && incIp.pic) existing.pic = incIp.pic;
-                                        }
+                                        if (!ipSettings.some(ex => ex.id === incIp.id)) { ipSettings.push(incIp); } 
+                                        else { let existing = ipSettings.find(ex => ex.id === incIp.id); if (existing && !existing.pic && incIp.pic) existing.pic = incIp.pic; }
                                     });
                                     localStorage.setItem('goodsTrackerIpSettings', JSON.stringify(ipSettings));
                                 }
                                 if (incomingPlatformSettings.length > 0) {
                                     incomingPlatformSettings.forEach(incP => { 
-                                        if (!platformSettings.some(ex => ex.id === incP.id)) {
-                                            platformSettings.push(incP); 
-                                        } else {
-                                            let existing = platformSettings.find(ex => ex.id === incP.id);
-                                            if (existing && !existing.pic && incP.pic) existing.pic = incP.pic;
-                                        }
+                                        if (!platformSettings.some(ex => ex.id === incP.id)) { platformSettings.push(incP); } 
+                                        else { let existing = platformSettings.find(ex => ex.id === incP.id); if (existing && !existing.pic && incP.pic) existing.pic = incP.pic; }
                                     });
                                     localStorage.setItem('goodsTrackerPlatformSettings', JSON.stringify(platformSettings));
                                 }
                             }
-                            
-                            // 儲存壓縮後的乾淨小數據，並重新整理
-                            saveData(); 
-                            window.location.reload();
+                            saveData(); window.location.reload();
                         });
-
-                    } catch (err) { 
-                        alert('導入失敗：' + err.message); 
-                    }
+                    } catch (err) { alert('導入失敗：' + err.message); }
                 };
                 reader.readAsText(file);
             };
@@ -2171,8 +2144,8 @@
         }
 
         function resetToDefaultSystem() {
-            if (confirm('🚨 警告：確定要還原手帳嗎？\n\n這將會徹底刪除手帳上現有的所有谷子記錄、自訂IP分類、自訂平台Logo以及你之前導入過的任何JSON備份！此操作無法復原。')) {
-                if (confirm('🔥 最後確認：你真的要清除所有數據嗎？\n（建議清除前先在主頁底部進行「💾 備份」下載備份檔案以防萬一）')) {
+            if (confirm('🚨 警告：確定要還原手帳嗎？')) {
+                if (confirm('🔥 最後確認：你真的要清除所有數據嗎？')) {
                     try {
                         localStorage.removeItem('goodsTrackerData');
                         localStorage.removeItem('goodsTrackerRate');
@@ -2180,24 +2153,18 @@
                         localStorage.removeItem('goodsTrackerPlatformSettings');
                         localStorage.removeItem('goodsTrackerHeaderTitle');
                         localStorage.removeItem('goodsTrackerSortMode');
-                        
-                        alert('✨ 系統已成功還原！手帳即將自動重新整理回復初始狀態。');
+                        alert('✨ 系統已成功還原！');
                         window.location.reload(); 
-                    } catch(e) {
-                        alert('還原失敗：' + e.message);
-                    }
+                    } catch(e) { alert('還原失敗：' + e.message); }
                 }
             }
         }
 
-        // 💡 智能檢測：如果用戶係用 Web App (Standalone Mode) 打開
         if (window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches) {
-            // 專屬為 Web App 加入鎖死回彈的 CSS
             const style = document.createElement('style');
             style.innerHTML = 'html, body { overscroll-behavior-y: none !important; }';
             document.head.appendChild(style);
         }
-        
     </script>
 </body>
 </html>
