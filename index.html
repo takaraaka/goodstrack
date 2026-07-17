@@ -621,11 +621,13 @@
             grid-template-columns: repeat(3, 1fr); 
             align-items: center;
             
-            height: 60px;
+            /* 💡 將原本死數的 height: 60px 改成 min-height，容納彈性留白 */
+            min-height: 60px; 
             z-index: 9999;
-            /* 💡 關鍵 1：左右 padding 改為 0，令 Grid 3個格子 100% 均分螢幕 */
             padding: 0; 
-            padding-bottom: env(safe-area-inset-bottom); 
+
+            /* 🎯 關鍵修正：當 safe-area 為 0 時，強制最少都要有 10px 嘅保底留白 */
+            padding-bottom: max(10px, env(safe-area-inset-bottom)); 
         }
 
         /* 💡 關鍵 2：使用 dvw (螢幕寬度單位)，確保在所有手機上比例完美一致 */
