@@ -31,7 +31,7 @@
 
         /* 💡 核心：直接加喺呢個位置，禁用整個網頁嘅橡皮筋回彈效果 */
         html, body {
-            overscroll-behavior-y: none;
+            background-color: var(--bg-color);
         }
 
         body {
@@ -2106,6 +2106,15 @@
                 }
             }
         }
+
+        // 💡 智能檢測：如果用戶係用 Web App (Standalone Mode) 打開
+        if (window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches) {
+            // 專屬為 Web App 加入鎖死回彈的 CSS
+            const style = document.createElement('style');
+            style.innerHTML = 'html, body { overscroll-behavior-y: none !important; }';
+            document.head.appendChild(style);
+        }
+        
     </script>
 </body>
 </html>
