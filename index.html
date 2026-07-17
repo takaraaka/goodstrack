@@ -601,37 +601,57 @@
             color: #e24a4a;
         }
 
-        /* Fixed Bottom Action Bar */
+        /* 1. 優化底部底欄：統一高度與內邊距 */
         .bottom-bar {
             position: fixed;
             bottom: 0;
             left: 0;
             right: 0;
-            background: white;
-            box-shadow: 0 -3px 12px rgba(0,0,0,0.08);
+            background: rgba(255, 255, 255, 0.96);
+            backdrop-filter: blur(10px); /* 💡 加入高級感毛玻璃效果 */
+            box-shadow: 0 -3px 15px rgba(0,0,0,0.05);
             display: flex;
             justify-content: space-around;
             align-items: center;
-            height: 64px;
+            height: 60px; /* 💡 統一固定高度 */
             z-index: 9999;
-            padding: 0 30px;
-            padding-bottom: env(safe-area-inset-bottom);
+            padding: 0 20px;
+            /* 💡 智能適應：喺 Web App 會自動留空給 iPhone 底部黑線，喺網頁版就保持正常 */
+            padding-bottom: env(safe-area-inset-bottom); 
         }
 
+        .bottom-bar span {
+            margin-top: 0 !important; /* 💡 拿走舊代碼強制撐開的 10px，確保真正水平居中 */
+            font-size: 13px;
+            font-weight: bold;
+            color: var(--text-color);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        
+
+        /* 2. 重塑加號按鈕：收埋入去平排，唔再凸出黎 */
         .add-btn {
             background-color: var(--primary-color);
             color: white;
             border: none;
-            width: 48px;
-            height: 48px;
+            width: 40px;  /* 💡 改為精緻的小圓鈕 */
+            height: 40px; /* 💡 與左右文字完美平排平衡 */
             border-radius: 50%;
-            font-size: 26px;
+            font-size: 22px;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            box-shadow: 0 3px 12px rgba(216, 92, 128, 0.45);
-            transform: translateY(-12px);
+            box-shadow: 0 2px 8px rgba(216, 92, 128, 0.3);
+            transform: none; /* 💡 徹底拿走原本的 translateY 向上突起限制 */
+            transition: transform 0.2s;
+        }
+
+        .add-btn:active {
+            transform: scale(0.92);
         }
 
         /* Lightbox Preview */
