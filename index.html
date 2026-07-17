@@ -732,6 +732,11 @@
             box-shadow: 0 10px 30px rgba(0,0,0,0.15);
             /* 💡 綁定向上滑動動畫 */
             animation: slideUpFade 0.25s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+
+            /* 💡 關鍵新增：限制手機版高度並允許內部滾動 */
+            max-height: 85vh;                  /* 限制最大高度為螢幕高度的 85%，留點上下呼吸空間 */
+            overflow-y: auto;                  /* 當內容超出 85% 時，自動啟用垂直滾動條 */
+            -webkit-overflow-scrolling: touch; /* 讓 iOS Safari 手指滑動時有極致順滑感 */
         }
 
         /* 💡 關鍵新增：當 Modal 被加入 .active class 時，由 none 變為 flex 顯示出來 */
