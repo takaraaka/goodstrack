@@ -29,10 +29,23 @@
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
         }
 
-        /* 💡 核心：直接加喺呢個位置，禁用整個網頁嘅橡皮筋回彈效果 */
+        
         html, body {
             background-color: var(--bg-color);
         }
+
+        /* 隱藏主網頁與彈窗的滾動條，但保留滑動功能 */
+        html, body, .modal-content {
+            -ms-overflow-style: none;  /* 適用於 IE / Edge */
+            scrollbar-width: none;     /* 適用於 Firefox */
+        }
+
+        html::-webkit-scrollbar, 
+        body::-webkit-scrollbar, 
+        .modal-content::-webkit-scrollbar {
+            display: none;             /* 適用於 Chrome, Safari, Web App (WebKit) */
+        }
+        
 
         body {
             background-color: var(--bg-color);
