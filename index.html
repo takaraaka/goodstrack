@@ -1820,11 +1820,11 @@
           
             statusContainer.innerHTML = statusHTML;
 
-            // ================= 3. 渲染 IP Filters (全新圓形金剛位版) =================
+            // ================= 3. 渲染 IP Filters (全新圓形金剛位版 - 隱藏下方重疊 Emoji) =================
             const filterContainer = document.getElementById('ip-filters');
             let currentStatusTotal = currentStatusFilter === 'all' ? totalAll : (statusCounts[currentStatusFilter] || 0);
                     
-            // 1. 先做「全部」按鈕 (無圖，純字，圓圈內放✨或全)
+            // 1. 先做「全部」按鈕 (維持不變)
             let ipHTML = `
                 <button class="filter-btn ${currentIPFilter === 'all' ? 'active' : ''}" onclick="filterIP('all', event)">
                     <div class="ip-circle-wrapper" style="background-color: var(--primary-light); color: var(--primary-color); border-color: var(--primary-color);">✨</div>
@@ -1839,21 +1839,34 @@
                     const countDisplay = count > 0 ? `(${count})` : '';
                     let innerContent = '';
                     let wrapperStyle = `background-color: ${ip.color}; color: ${ip.textColor || getContrastYIQ(ip.color)};`;
+                    
+                    // 💡 新增：預設下面顯示的文字就是原本的名稱
+                    let displayName = ip.name || ''; 
 
-                    // 💡 判斷邏輯：
+                    // 利用正規表達式抓取名字最開頭的第一個 Emoji
+                    const emojiMatch = ip.name ? ip.name.match(/^[\u{1F300}-\u{1F64F}\u{1F680}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F900}-\u{1F9FF}\u{1F1E6}-\u{1F1FF}]/u) : null;
+
                     if (ip.pic) {
-                        // A. 如果有加 icon：就 icon 響上面，名字響 icon 下面
-                        // B. 如果得 icon（沒有名字）：圖片一樣會完美 cover 填滿圓圈
                         innerContent = `<img src="${ip.pic}">`;
+                        // 💡 如果有相片，而名字開頭又有寫 Emoji，順便幫你把下方的 Emoji 也切走，維持純文字最漂亮
+                        if (emojiMatch) {
+                            displayName = ip.name.replace(emojiMatch[0], '').trim();
+                        }
                     } else {
-                        // C. 如果冇 icon：圓圈內顯示文字的第一個字（或者直接放簡寫），名字依舊在下面
-                        innerContent = ip.name ? ip.name.charAt(0) : '谷';
+                        if (emojiMatch) {
+                            innerContent = emojiMatch[0]; // 圓圈內放開頭的 Emoji
+                            // 🎯 關鍵修正：下方的細字，把匹配到的第一個 Emoji 直接「刪除」，只留後面的名字！
+                            displayName = ip.name.replace(emojiMatch[0], '').trim(); 
+                        } else {
+                            innerContent = ip.name ? ip.name.charAt(0) : '谷'; // 否則維持抓第一個字
+                        }
                     }
 
                     ipHTML += `
                         <button class="filter-btn ${currentIPFilter === ip.id ? 'active' : ''}" onclick="filterIP('${ip.id}', event)">
                             <div class="ip-circle-wrapper" style="${wrapperStyle}">${innerContent}</div>
-                            <div class="ip-circle-text">${ip.name}${countDisplay}</div>
+                            <!-- 💡 這裡改用處理過的 displayName 輸出，就不會再重疊顯示 Emoji 喇 -->
+                            <div class="ip-circle-text">${displayName}${countDisplay}</div>
                         </button>
                     `;
                 }
