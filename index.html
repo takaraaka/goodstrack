@@ -639,6 +639,7 @@
         }
 
         /* Modal styling */
+        /* 修改 Modal 遮罩層 */
         .modal {
             display: none;
             position: fixed;
@@ -649,20 +650,27 @@
             background: rgba(0,0,0,0.5);
             z-index: 10000;
             align-items: flex-end;
+            /* 阻止遮罩層本身的觸控穿透 */
+            touch-action: none; 
         }
 
         .modal.active {
             display: flex !important;
         }
 
+        /* 修改 Modal 內容盒 */
         .modal-content {
             background: white;
             width: 100%;
-            height: 90vh;
-            border-top-left-radius: 0px;
-            border-top-right-radius: 0px;
-            padding: 10px 20px 80px 20px;
+            /* 💡 使用 dvh 確保喺 Safari 網頁版會自動扣除頂底工具欄，唔會再過大 */
+            height: 85dvh; 
+            border-top-left-radius: 16px;
+            border-top-right-radius: 16px;
+            /* 調整 padding，底部預留空位畀儲存按鈕 */
+            padding: 16px 20px 100px 20px; 
+            /* 確保彈窗內部可以獨立極流暢地滑動 */
             overflow-y: auto;
+            -webkit-overflow-scrolling: touch; 
             box-shadow: 0 -5px 20px rgba(0,0,0,0.15);
             position: relative;
             display: flex;
@@ -682,9 +690,12 @@
             padding-bottom: calc(12px + env(safe-area-inset-bottom));
         }
 
+        /* 鎖定底層網頁捲動嘅 Class */
         body.modal-open {
             overflow: hidden !important;
-            height: 100vh !important;
+            position: fixed !important; /* 💡 強制鎖死 Safari 網頁底層 */
+            width: 100% !important;
+            height: 100% !important;
         }
 
         .modal-title {
@@ -1833,12 +1844,19 @@
 
 
 
-        function openModal(action, index = null) {
-            const modal = document.getElementById('goods-modal'); document.getElementById('goods-form').reset();
-            clearUploadedImage(); document.getElementById('conversion-preview').innerText = '';
-            renderFormIpTags(); renderFormPlatforms();
+        let scrollPosition = 0; // 用來記錄打開彈窗前的主頁捲動高度
 
+        function openModal(action, index = null) {
+            const modal = document.getElementById('goods-modal'); 
+            document.getElementById('goods-form').reset();
+            clearUploadedImage(); 
+            document.getElementById('conversion-preview').innerText = '';
+            renderFormIpTags(); 
+            renderFormPlatforms();
+
+            // 帶入原本的 Edit 數據邏輯 (保持你原本寫的，此處省略...)
             if (action === 'edit' && index !== null) {
+                // ... 你原本的 edit 帶入邏輯 ...
                 document.getElementById('modal-action-title').innerText = '修改谷子記錄';
                 const item = goodsList[index]; document.getElementById('edit-index').value = index;
                 document.getElementById('form-item').value = item.item;
@@ -1863,6 +1881,7 @@
                 }
                 calculateConvertedPrice();
             } else {
+                // ... 你原本的 add 帶入邏輯 ...
                 document.getElementById('modal-action-title').innerText = '新增谷子記錄'; document.getElementById('edit-index').value = '';
                 selectedFormIPs = ipSettings.length > 0 ? [ipSettings[0].id] : ['OTHERS']; updateFormIPClasses();
                 document.getElementById('form-date').value = new Date().toISOString().split('T')[0];
@@ -1870,11 +1889,25 @@
                 document.getElementById('form-arrived-year').value = new Date().getFullYear(); document.getElementById('form-arrived-month').value = '';
                 if (platformSettings.length > 0) document.getElementById('form-platform').value = platformSettings[0].id;
             }
-            modal.classList.add('active'); document.body.classList.add('modal-open');
+
+            // 💡 關鍵鎖死底層：記錄當前主頁位置，並鎖定 body 捲動
+            scrollPosition = window.pageYOffset;
+            document.body.style.top = `-${scrollPosition}px`;
+            document.body.classList.add('modal-open');
+
+            modal.classList.add('active'); 
         }
 
-        function closeModal() { document.getElementById('goods-modal').classList.remove('active'); document.body.classList.remove('modal-open'); }
+        function closeModal() { 
+            const modal = document.getElementById('goods-modal');
+            modal.classList.remove('active'); 
 
+            // 💡 關鍵解鎖底層：恢復 body 捲動，並跳回原本的捲動位置
+            document.body.classList.remove('modal-open');
+            document.body.style.top = '';
+            window.scrollTo(0, scrollPosition);
+        }
+        
         function saveGoods(event) {
             event.preventDefault(); const index = document.getElementById('edit-index').value;
             const y = document.getElementById('form-arrived-year').value.trim(), m = document.getElementById('form-arrived-month').value.trim();
