@@ -601,30 +601,48 @@
             color: #e24a4a;
         }
 
-        /* 1. 優化底部底欄：統一高度與內邊距 */
+        /* 1. 優化底部底欄：精確視覺對稱排版 */
         .bottom-bar {
             position: fixed;
             bottom: 0;
             left: 0;
             right: 0;
             background: rgba(255, 255, 255, 0.96);
-            backdrop-filter: blur(10px); /* 💡 加入高級感毛玻璃效果 */
+            backdrop-filter: blur(10px);
             box-shadow: 0 -3px 15px rgba(0,0,0,0.05);
-            display: flex;
-            justify-content: space-around;
+            
+            display: grid;
+            grid-template-columns: repeat(3, 1fr); 
             align-items: center;
-            height: 60px; /* 💡 統一固定高度 */
+            
+            height: 60px;
             z-index: 9999;
-            padding: 0 20px;
-            /* 💡 智能適應：喺 Web App 會自動留空給 iPhone 底部黑線，喺網頁版就保持正常 */
+            /* 💡 關鍵 1：左右 padding 改為 0，令 Grid 3個格子 100% 均分螢幕 */
+            padding: 0; 
             padding-bottom: env(safe-area-inset-bottom); 
         }
 
+        /* 💡 關鍵 2：使用 dvw (螢幕寬度單位)，確保在所有手機上比例完美一致 */
+        .bottom-bar > *:nth-child(1) {
+            justify-self: start;       /* 靠左對齊 */
+            padding-left: 15dvw;       /* 💡 佔螢幕寬度的 15%，自動適應所有手機 */
+        }
+
+        .bottom-bar > *:nth-child(2) {
+            justify-self: center;      /* 「加號」穩居絕對正中間 */
+        }
+
+        .bottom-bar > *:nth-child(3) {
+            justify-self: end;         /* 靠右對齊 */
+            padding-right: 15dvw;      /* 💡 佔螢幕寬度的 15%，與左邊絕對對稱 */
+        }
+
         .bottom-bar span {
-            margin-top: 0 !important; /* 💡 拿走舊代碼強制撐開的 10px，確保真正水平居中 */
-            font-size: 13px;
+            margin-top: 0 !important;
+            font-size: 12px;
             font-weight: bold;
-            color: var(--text-color);
+            color: var(--text-light);
+            cursor: pointer;
             display: flex;
             align-items: center;
             gap: 4px;
@@ -637,17 +655,23 @@
             background-color: var(--primary-color);
             color: white;
             border: none;
-            width: 40px;  /* 💡 改為精緻的小圓鈕 */
-            height: 40px; /* 💡 與左右文字完美平排平衡 */
+            width: 40px;
+            height: 40px;
             border-radius: 50%;
-            font-size: 22px;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
             box-shadow: 0 2px 8px rgba(216, 92, 128, 0.3);
-            transform: none; /* 💡 徹底拿走原本的 translateY 向上突起限制 */
             transition: transform 0.2s;
+            /* 💡 拿走原本的 font-size: 22px; */
+        }
+
+        /* 💡 新增：控制 SVG 十字的大小（高寬 18px 是最配 40px 按鈕的黃金比例） */
+        .add-btn svg {
+            width: 18px;
+            height: 18px;
+            display: block;
         }
 
         .add-btn:active {
@@ -682,42 +706,59 @@
         }
 
         /* Modal styling */
-        /* 修改 Modal 遮罩層 */
+        /* 1. 彈窗遮罩背景：一設為 display: flex 就会自動觸發 fadeInBg 動畫 */
         .modal {
-            display: none;
+            display: none; 
             position: fixed;
             top: 0;
             left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.5);
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.4);
             z-index: 10000;
-            align-items: flex-end;
-            /* 阻止遮罩層本身的觸控穿透 */
-            touch-action: none; 
+            justify-content: center;
+            align-items: center;
+            /* 💡 綁定淡入動畫 */
+            animation: fadeInBg 0.2s ease-out forwards;
         }
 
+        /* 2. 彈窗白框本體：一打開就會自動觸發由下往上的 slideUpFade 動畫 */
+        .modal-content {
+            background-color: var(--card-bg);
+            padding: 20px;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            /* 💡 綁定向上滑動動畫 */
+            animation: slideUpFade 0.25s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+        }
+
+        /* 💡 關鍵新增：當 Modal 被加入 .active class 時，由 none 變為 flex 顯示出來 */
         .modal.active {
             display: flex !important;
         }
-
-        .modal-content {
-            background: white;
-            width: 100%;
-            /* 💡 重點改動 1：高度改為自動適應，不再強制壓扁 */
-            height: auto; 
-            /* 💡 重點改動 2：最大高度限制為螢幕的 90%，防止撐出螢幕外 */
-            max-height: 95dvh; 
-            border-top-left-radius: 16px;
-            border-top-right-radius: 16px;
-            /* 💡 底部 padding 設為 40px，確保儲存按鈕下方有足夠的留白 */
-            padding: 16px 20px 40px 20px; 
-            overflow-y: auto;
-            -webkit-overflow-scrolling: touch; 
-            box-shadow: 0 -5px 20px rgba(0,0,0,0.15);
-            position: relative;
-            display: flex;
-            flex-direction: column;
+        
+        /* 💡 新增：遮罩背景淡入動畫 */
+        @keyframes fadeInBg {
+            from {
+                background-color: rgba(0, 0, 0, 0);
+            }
+            to {
+                background-color: rgba(0, 0, 0, 0.4);
+            }
+        }
+        
+        /* 💡 新增：白框由下往上升起並淡入動畫 */
+        @keyframes slideUpFade {
+            from {
+                transform: translateY(80px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
         }
 
         /* 1. 將原本 fixed 底欄的設定改成普通按鈕排版 */
@@ -1045,9 +1086,15 @@
     </div>
 
     <div class="bottom-bar">
-        <span style="margin-top: 10px; font-size: 12px; color: var(--text-light); cursor:pointer;" onclick="exportData()">💾 備份</span>
-        <button class="add-btn" onclick="openModal('add'); event.preventDefault();">+</button>
-        <span style="margin-top: 10px; font-size: 12px; color: var(--text-light); cursor:pointer;" onclick="importData()">📂 導入</span>
+        <span style="cursor:pointer;" onclick="exportData()">💾 備份</span>
+        <!-- 💡 移除了 onclick 裡面多餘的 event.preventDefault(); 並且補上 type="button" 避開 Form 提交衝突 -->
+        <button type="button" class="add-btn" onclick="openModal('add')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+        </button>
+        <span style="cursor:pointer;" onclick="importData()">📂 導入</span>
     </div>
 
     <div class="lightbox-overlay" id="lightbox" onclick="closeLightbox()">
@@ -1074,11 +1121,11 @@
                 </div>
 
                 <div class="form-row" style="margin-bottom: 12px;">
-                    <div class="form-group" style="flex: 1.2;">
+                    <div class="form-group" style="flex: 1;">
                         <label>下單日期</label>
                         <input type="date" id="form-date" class="form-control">
                     </div>
-                    <div class="form-group" style="flex: 0.8;">
+                    <div class="form-group" style="flex: 1;">
                         <label>預計到貨(年/月)</label>
                         <div class="dropdown-double-row">
                             <input type="number" id="form-arrived-year" class="form-control" placeholder="年" min="2026" max="2100">
@@ -1128,7 +1175,7 @@
                 </div>
                 
                 <!-- 1. 將折算預覽嘅 margin-bottom 由 12px 縮減到 4px -->
-                <div id="conversion-preview" style="font-size:11px; color:var(--primary-color); margin-top:－8px; margin-bottom:2px; padding-left:2px;"></div>
+                <div id="conversion-preview" style="font-size:11px; color:var(--primary-color); margin-top:-8px; margin-bottom:2px; padding-left:2px;"></div>
 
                 <!-- 2. 在 form-group 加上 margin-top:-4px 向上微調拉近 -->
                 <div class="form-group" style="margin-top:-4px; margin-bottom: 20px;">
