@@ -3528,35 +3528,24 @@
 
 
         function calculateStats() {
-
             let imminent = 0, pending = 0, balTotalRMB = 0;
-
             const now = new Date(); const currentTimestamp = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
-
             goodsList.forEach(item => {
-
                 if (item.status !== '完成') { 
-
                     pending++; 
-
                     let arrTime = parseArrivalDate(item.arrived); 
-
                     if (arrTime !== null && arrTime <= currentTimestamp) imminent++; 
-
                 }
-
-                const balInRMB = (item.balanceCurrency || 'RMB') === 'RMB' ? Number(item.balance || 0) : (Number(item.balance || 0) / globalRate);
-
-                balTotalRMB += balInRMB;
-
+                
+                // 🎯 核心修正：只有在「未勾選已全付」且「狀態不是完成」的情況下，才計算尾款
+                if (!item.fullpaid && item.status !== '完成') {
+                    const balInRMB = (item.balanceCurrency || 'RMB') === 'RMB' ? Number(item.balance || 0) : (Number(item.balance || 0) / globalRate);
+                    balTotalRMB += balInRMB;
+                }
             });
-
             document.getElementById('imminent-count').innerText = imminent + " 件";
-
             document.getElementById('pending-count').innerText = pending + " 件";
-
             document.getElementById('total-balance').innerText = `¥${Math.round(balTotalRMB)}`;
-
         }
 
 
