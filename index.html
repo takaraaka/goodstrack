@@ -1119,53 +1119,77 @@
         </div>
         
         <div class="system-settings-panel" id="system-settings-panel">
-            <div class="settings-section-title">✍️ 自訂手帳標題</div>
-            <div class="settings-add-form" style="margin-bottom: 16px;">
-                <input type="text" id="custom-header-title" placeholder="輸入新的手帳標題">
-                <button class="settings-btn" onclick="updateHeaderTitle()">儲存標題</button>
-            </div>
+    
+    <!-- 🎯 1. 頂部大項目選單欄（預設顯示，撳邊個就切換去邊個分頁） -->
+    <div id="settings-menu-tabs" style="display: flex; gap: 6px; margin-bottom: 12px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px; overflow-x: auto; scrollbar-width: none;">
+        <button class="settings-btn" id="tab-btn-title" onclick="switchSettingsSubPage('title')" style="background: var(--primary-light); color: var(--primary-color);">✍️ 標題</button>
+        <button class="settings-btn" id="tab-btn-ip" onclick="switchSettingsSubPage('ip')" style="background: transparent; color: var(--text-light); border: 1px solid var(--border-color);">🎨 IP分類</button>
+        <button class="settings-btn" id="tab-btn-platform" onclick="switchSettingsSubPage('platform')" style="background: transparent; color: var(--text-light); border: 1px solid var(--border-color);">🛒 平台</button>
+        <button class="settings-btn" id="tab-btn-system" onclick="switchSettingsSubPage('system')" style="background: transparent; color: var(--text-light); border: 1px solid var(--border-color);">⚠️ 系統</button>
+    </div>
 
-            <div class="settings-section-title">🎨 IP 分類及顏色管理</div>
-            <div class="settings-list" id="ip-manager-list"></div>
-            <div class="settings-add-form">
-                <input type="hidden" id="edit-ip-id"> <input type="text" id="new-ip-name" placeholder="名稱 (可留空)">
-                <input type="color" id="new-ip-color" value="#ffccd5" title="標籤顏色">
-                
-                <div style="display: flex; flex-direction: column; align-items: center; gap: 2px;">
-                    <div class="custom-icon-upload-wrapper" onclick="document.getElementById('new-ip-file').click()" title="上傳正方形Icon">
-                        <span id="new-ip-icon-placeholder">📷</span>
-                        <img id="new-ip-icon-preview" style="display:none;">
-                    </div>
-                    <span class="icon-clear-btn" id="ip-icon-clear-btn" onclick="clearIpIconUpload()">清除 ✕</span>
-                </div>
-                <input type="file" id="new-ip-file" accept="image/*" style="display:none;" onchange="handleIpIconUpload(event)">
-                <input type="hidden" id="new-ip-pic">
-
-                <button class="settings-btn" id="ip-submit-btn" onclick="addNewIp()">＋新增 IP</button>
-            </div>
-
-            <div class="settings-section-title">🛒 購買平台管理</div>
-            <div class="settings-list" id="platform-manager-list"></div>
-            <div class="settings-add-form" style="margin-bottom: 6px;">
-                <input type="hidden" id="edit-platform-id">
-                <input type="text" id="new-platform-name" placeholder="名稱 (可留空)">
-                
-                <div style="display: flex; flex-direction: column; align-items: center; gap: 2px;">
-                    <div class="custom-icon-upload-wrapper" onclick="document.getElementById('new-platform-file').click()" title="上傳正方形Icon">
-                        <span id="new-platform-icon-placeholder">📷</span>
-                        <img id="new-platform-icon-preview" style="display:none;">
-                    </div>
-                    <span class="icon-clear-btn" id="platform-icon-clear-btn" onclick="clearPlatformIconUpload()">清除 ✕</span>
-                </div>
-                <input type="file" id="new-platform-file" accept="image/*" style="display:none;" onchange="handlePlatformIconUpload(event)">
-                <input type="hidden" id="new-platform-pic">
-
-                <button class="settings-btn" id="platform-submit-btn" onclick="addNewPlatform()">＋新增平台</button>
-            </div>
-            <div style="text-align: center; padding-top: 12px; margin-bottom: 10px;">
-                <span style="font-size: 10px; color: #e24a4a; cursor: pointer; text-decoration: underline; font-weight: bold;" onclick="resetToDefaultSystem()">⚠️ 還原手帳至初始狀態</span>
-            </div>
+    <!-- 🎯 2. 子分頁 A：自訂手帳標題 -->
+    <div id="subpage-title" class="settings-subpage">
+        <div class="settings-section-title">✍️ 自訂手帳標題</div>
+        <div class="settings-add-form" style="margin-bottom: 6px;">
+            <input type="text" id="custom-header-title" placeholder="輸入新的手帳標題">
+            <button class="settings-btn" onclick="updateHeaderTitle()">儲存標題</button>
         </div>
+    </div>
+
+    <!-- 🎯 3. 子分頁 B：IP 分類管理 -->
+    <div id="subpage-ip" class="settings-subpage" style="display: none;">
+        <div class="settings-section-title">🎨 IP 分類及顏色管理</div>
+        <div class="settings-list" id="ip-manager-list"></div>
+        <div class="settings-add-form">
+            <input type="hidden" id="edit-ip-id"> <input type="text" id="new-ip-name" placeholder="名稱 (可留空)">
+            <input type="color" id="new-ip-color" value="#ffccd5" title="標籤顏色">
+            
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 2px;">
+                <div class="custom-icon-upload-wrapper" onclick="document.getElementById('new-ip-file').click()" title="上傳正方形Icon">
+                    <span id="new-ip-icon-placeholder">📷</span>
+                    <img id="new-ip-icon-preview" style="display:none;">
+                </div>
+                <span class="icon-clear-btn" id="ip-icon-clear-btn" onclick="clearIpIconUpload()">清除 ✕</span>
+            </div>
+            <input type="file" id="new-ip-file" accept="image/*" style="display:none;" onchange="handleIpIconUpload(event)">
+            <input type="hidden" id="new-ip-pic">
+
+            <button class="settings-btn" id="ip-submit-btn" onclick="addNewIp()">＋新增 IP</button>
+        </div>
+    </div>
+
+    <!-- 🎯 4. 子分頁 C：購買平台管理 -->
+    <div id="subpage-platform" class="settings-subpage" style="display: none;">
+        <div class="settings-section-title">🛒 購買平台管理</div>
+        <div class="settings-list" id="platform-manager-list"></div>
+        <div class="settings-add-form" style="margin-bottom: 6px;">
+            <input type="hidden" id="edit-platform-id">
+            <input type="text" id="new-platform-name" placeholder="名稱 (可留空)">
+            
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 2px;">
+                <div class="custom-icon-upload-wrapper" onclick="document.getElementById('new-platform-file').click()" title="上傳正方形Icon">
+                    <span id="new-platform-icon-placeholder">📷</span>
+                    <img id="new-platform-icon-preview" style="display:none;">
+                </div>
+                <span class="icon-clear-btn" id="platform-icon-clear-btn" onclick="clearPlatformIconUpload()">清除 ✕</span>
+            </div>
+            <input type="file" id="new-platform-file" accept="image/*" style="display:none;" onchange="handlePlatformIconUpload(event)">
+            <input type="hidden" id="new-platform-pic">
+
+            <button class="settings-btn" id="platform-submit-btn" onclick="addNewPlatform()">＋新增平台</button>
+        </div>
+    </div>
+
+    <!-- 🎯 5. 子分頁 D：危險區還原 -->
+    <div id="subpage-system" class="settings-subpage" style="display: none;">
+        <div class="settings-section-title" style="color: #e24a4a;">⚠️ 系統高級設定</div>
+        <div style="text-align: center; padding: 20px 0;">
+            <span style="font-size: 12px; color: #e24a4a; cursor: pointer; text-decoration: underline; font-weight: bold;" onclick="resetToDefaultSystem()">⚠️ 還原手帳至初始狀態</span>
+        </div>
+    </div>
+</div>
+
 
         <div class="filter-section">
             <div>
@@ -2178,6 +2202,34 @@
             style.innerHTML = 'html, body { overscroll-behavior-y: none !important; }';
             document.head.appendChild(style);
         }
+        
+        // 💡 新增：控制系統設定內部的子分頁切換
+function switchSettingsSubPage(pageId) {
+    // 1. 隱藏所有子分頁
+    document.querySelectorAll('.settings-subpage').forEach(el => el.style.display = 'none');
+    
+    // 2. 顯示點選的子分頁
+    document.getElementById('subpage-' + pageId).style.display = 'block';
+    
+    // 3. 還原所有頁籤按鈕的預設不選中樣式
+    ['title', 'ip', 'platform', 'system'].forEach(id => {
+        const btn = document.getElementById('tab-btn-' + id);
+        if (btn) {
+            btn.style.background = 'transparent';
+            btn.style.color = 'var(--text-light)';
+            btn.style.border = '1px solid var(--border-color)';
+        }
+    });
+    
+    // 4. 高亮當前點選的頁籤
+    const activeBtn = document.getElementById('tab-btn-' + pageId);
+    if (activeBtn) {
+        activeBtn.style.background = 'var(--primary-light)';
+        activeBtn.style.color = 'var(--primary-color)';
+        activeBtn.style.border = 'none';
+    }
+}
+
     </script>
 </body>
 </html>
