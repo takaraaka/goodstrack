@@ -1181,14 +1181,36 @@
         </div>
     </div>
 
-    <!-- 🎯 5. 子分頁 D：危險區還原 -->
+        <!-- 🎯 5. 子分頁 D：雲端同步與系統高級設定 -->
     <div id="subpage-system" class="settings-subpage" style="display: none;">
-        <div class="settings-section-title" style="color: #e24a4a;">⚠️ 系統高級設定</div>
-        <div style="text-align: center; padding: 20px 0;">
-            <span style="font-size: 12px; color: #e24a4a; cursor: pointer; text-decoration: underline; font-weight: bold;" onclick="resetToDefaultSystem()">⚠️ 還原手帳至初始狀態</span>
+        
+        <!-- 💡 提前加定畀你睇嘅雲端同步 Layout -->
+        <div class="settings-section-title">🌐 雲端數據同步</div>
+        <div class="settings-add-form" style="margin-bottom: 24px; gap: 8px;">
+            <input type="text" id="supabase-secret-key" class="form-control" placeholder="🔑 輸入你的專屬暗號..." style="flex: 1; height: 32px; font-size: 12px; border-radius: 6px;">
+            <button class="settings-btn" type="button" style="padding: 0 12px; height: 32px; font-size: 12px; white-space: nowrap;">🔄 連結並同步</button>
         </div>
+        <div style="font-size: 10px; color: var(--text-light); margin-top: -18px; margin-bottom: 20px; padding-left: 2px; line-height: 1.4;">
+            💡 提示：手機和電腦輸入同一個暗號，就可以即時打通、雙向同步喇！
+        </div>
+
+        <hr style="border: none; border-top: 1px dashed var(--border-color); margin-bottom: 16px;">
+
+        <!-- 💡 換回正常顏色的標題 -->
+        <div class="settings-section-title">🛠️ 系統高級設定</div>
+        
+        <!-- 💡 將還原字眼改造成跟 IP 列表一樣好看的獨立膠囊 Button 樣式 -->
+        <div class="settings-list" style="margin-top: 8px;">
+            <div class="settings-item" style="border-color: #ffe3e8; background: #fff0f3; padding: 8px 12px; border-radius: 8px;">
+                <span style="font-size: 12px; font-weight: bold; color: #e24a4a; display: inline-flex; align-items: center; gap: 4px;">⚠️ 危險區域 (Danger Zone)</span>
+                <button class="action-btn delete" type="button" onclick="resetToDefaultSystem()" style="background: #ffffff; border: 1px solid #e24a4a; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: bold; cursor: pointer; transition: all 0.2s;">
+                    💥 還原手帳
+                </button>
+            </div>
+        </div>
+
     </div>
-</div>
+
 
 
         <div class="filter-section">
