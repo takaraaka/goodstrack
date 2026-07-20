@@ -3,7 +3,7 @@
 <html lang="zh-Hant">
 
 <head>
-
+    
     <meta charset="UTF-8">
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -14,7 +14,7 @@
 
     <meta name="apple-mobile-web-app-status-bar-style" content="#d85c80">
 
-    
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <title>谷子手帳 Goods Tracker</title>
 
@@ -2322,17 +2322,15 @@
     <!-- 🎯 5. 子分頁 D：雲端同步與系統高級設定 -->
     <div id="subpage-system" class="settings-subpage" style="display: none;">
         
-        <!-- 🌐 雲端數據同步（今日暫時隱藏）
         <div class="settings-section-title">🌐 雲端數據同步</div>
-        <div class="settings-add-form" style="margin-bottom: 24px; gap: 8px;">
-            <input type="text" id="supabase-secret-key" class="form-control" placeholder="🔑 輸入你的專屬暗號..." style="flex: 1; height: 32px; font-size: 12px; border-radius: 6px;">
-            <button class="settings-btn" type="button" style="padding: 0 12px; height: 32px; font-size: 12px; white-space: nowrap;">🔄 連結並同步</button>
+        <div class="settings-add-form" style="margin-bottom: 8px; gap: 8px;">
+            <input type="text" id="supabase-secret-key" class="form-control" placeholder="🔑 輸入專屬暗號 (如: my-goods-2026)" style="flex: 1; height: 32px; font-size: 12px; border-radius: 6px;">
+            <button class="settings-btn" type="button" onclick="connectCloudSync()" style="padding: 0 12px; height: 32px; font-size: 12px; white-space: nowrap;">🔄 連結/同步</button>
         </div>
-        <div style="font-size: 10px; color: var(--text-light); margin-top: -18px; margin-bottom: 20px; padding-left: 2px; line-height: 1.4;">
-            💡 提示：手機和電腦輸入同一個暗號，就可以即時打通、雙向同步喇！
+        <div id="sync-status-tip" style="font-size: 10px; color: var(--primary-color); margin-bottom: 16px; padding-left: 2px;">
+            💡 提示：手機和電腦輸入同一個暗號，打開網頁時就會自動比對更新！
         </div>
-        <hr style="border: none; border-top: 1px dashed var(--border-color); margin-bottom: 16px;"> 
-        -->
+        <hr style="border: none; border-top: 1px dashed var(--border-color); margin-bottom: 16px;">
 
         <div class="settings-section-title">🛠️ 系統高級設定</div>
         
@@ -2644,6 +2642,14 @@
 
     <script>
 
+      // 🌐 Supabase 雲端設定
+        const SUPABASE_URL = "https://knmqsvsnccftshmcijxk.supabase.co";
+        const SUPABASE_KEY = "sb_publishable_c_2lOi4u_oEXGz-aY6Bcvw_u-ZAo-fD";
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        let userSecretKey = localStorage.getItem('goodsTrackerSecretKey') || '';
+        let lastSyncTime = localStorage.getItem('goodsTrackerLastSyncTime') || 0;
+
         const defaultIpSettings = [
 
             { id: "IP1", name: "IP1", color: "#ffe3e8", textColor: "#d85c80", pic: "" },
@@ -2773,23 +2779,21 @@
 
 
         document.addEventListener("DOMContentLoaded", function() {
-
             document.getElementById('main-header').innerText = headerTitle;
-
             document.getElementById('custom-header-title').value = headerTitle;
 
-
-
             const sortSelect = document.getElementById('sort-select');
-
             if (sortSelect) sortSelect.value = currentSortMode;
 
-
+            // 🎯 填入舊有暗號
+            if (userSecretKey) {
+                const input = document.getElementById('supabase-secret-key');
+                if (input) input.value = userSecretKey;
+                autoCheckAndSync(); // ⚡ 開網頁自動無感比對雲端
+            }
 
             renderSettingsManager();
-
             render(); 
-
         });
 
 
@@ -3421,19 +3425,13 @@
 
 
         function saveData() {
-
             try { 
-
                 localStorage.setItem('goodsTrackerData', JSON.stringify(goodsList)); 
-
             } catch(e) {
-
-                alert('⚠️ 手機暫存空間已爆滿！儲存失敗。');
-
+                alert('⚠️ 手機暫存空間已爆滿！儲存失敗');
             }
-
+            pushToCloud(); // 👈 🎯 新增：每次保存自動推送到雲端
             render();
-
         }
 
 
@@ -4035,65 +4033,36 @@
         
 
         function saveGoods(event) {
-
             event.preventDefault(); const index = document.getElementById('edit-index').value;
-
             const y = document.getElementById('form-arrived-year').value.trim(), m = document.getElementById('form-arrived-month').value.trim();
-
             let combined = (y || m) ? `${y ? y + '年' : ''}${m ? m + '月' : ''}` : '';
 
-
-
             const itemData = {
-
                 item: document.getElementById('form-item').value,
-
                 ip: selectedFormIPs.length > 0 ? selectedFormIPs : ['OTHERS'],
-
                 status: document.getElementById('form-status').value,
-
                 date: document.getElementById('form-date').value,
-
                 arrived: combined,
-
                 paid: parseFloat(document.getElementById('form-paid').value) || 0,
-
                 currency: document.getElementById('form-currency').value,
-
                 balance: parseFloat(document.getElementById('form-balance').value) || 0,
-
                 balanceCurrency: document.getElementById('form-balance-currency').value,
-
                 platform: document.getElementById('form-platform').value,
-
                 fullpaid: document.getElementById('form-fullpaid').checked,
-
                 pic: document.getElementById('form-pic').value,
-
                 remarks: document.getElementById('form-remarks').value
-
             };
 
-
-
             if (index !== '') goodsList[index] = itemData; else goodsList.push(itemData);
-
             
-
-            // 🎯 核心優化：不再強制執行重新加載網頁，而是直接重渲染介面，保障下一步異步對接雲端穩定
-
             try { 
-
                 localStorage.setItem('goodsTrackerData', JSON.stringify(goodsList)); 
-
             } catch(e){}
-
             
+            pushToCloud(); // 👈 🎯 補上這行：新增/修改谷子時，立即發送到雲端！
 
             closeModal();
-
             render(); 
-
         }
 
 
@@ -4390,6 +4359,95 @@
 
         }
 
+        // 🎯 2. 自動比對時間戳記與拉取最新數據
+        async function autoCheckAndSync() {
+            if (!userSecretKey) return;
+            try {
+                const { data, error } = await supabaseClient
+                    .from('user_data')
+                    .select('updated_at, data_json')
+                    .eq('secret_key', userSecretKey)
+                    .single();
+
+                if (error || !data) return;
+
+                const remoteTimestamp = new Date(data.updated_at).getTime();
+                const localTimestamp = Number(lastSyncTime);
+
+                // 如果雲端時間比本地最新，代表電腦或其他裝置改過，自動下載覆蓋本地
+                if (remoteTimestamp > localTimestamp) {
+                    applyCloudData(data.data_json);
+                    lastSyncTime = remoteTimestamp;
+                    localStorage.setItem('goodsTrackerLastSyncTime', lastSyncTime);
+                    render();
+                    alert('✨ 偵測到雲端最新記錄，已自動更新！');
+                }
+            } catch (err) { console.error('自動比對失敗:', err); }
+        }
+
+        // 🎯 3. 推送本地最新資料到雲端 (Save/Import 時自動觸發)
+        async function pushToCloud() {
+            if (!userSecretKey) return;
+            const payload = { goodsList, globalRate, ipSettings, platformSettings, headerTitle };
+            const nowIso = new Date().toISOString();
+            
+            try {
+                const { error } = await supabaseClient
+                    .from('user_data')
+                    .upsert({ 
+                        secret_key: userSecretKey, 
+                        data_json: payload, 
+                        updated_at: nowIso 
+                    });
+
+                if (!error) {
+                    lastSyncTime = new Date(nowIso).getTime();
+                    localStorage.setItem('goodsTrackerLastSyncTime', lastSyncTime);
+                }
+            } catch (err) { console.error('同步雲端失敗:', err); }
+        }
+
+        // 🎯 4. 點擊「連結/同步」按鈕
+        async function connectCloudSync() {
+            const keyInput = document.getElementById('supabase-secret-key').value.trim();
+            if (!keyInput) return alert('請輸入暗號！');
+
+            userSecretKey = keyInput;
+            localStorage.setItem('goodsTrackerSecretKey', userSecretKey);
+
+            // 嘗試撈取雲端
+            const { data, error } = await supabaseClient
+                .from('user_data')
+                .select('data_json, updated_at')
+                .eq('secret_key', userSecretKey)
+                .single();
+
+            if (data && data.data_json) {
+                if (confirm('☁️ 發現雲端已有備份！是否載入雲端數據？\n\n【確定】載入雲端資料\n【取消】將目前的本地資料覆蓋到雲端')) {
+                    applyCloudData(data.data_json);
+                    lastSyncTime = new Date(data.updated_at).getTime();
+                    localStorage.setItem('goodsTrackerLastSyncTime', lastSyncTime);
+                    render();
+                    alert('✨ 已成功載入雲端數據！');
+                } else {
+                    await pushToCloud();
+                    alert('✨ 已將本地數據同步推送到雲端！');
+                }
+            } else {
+                await pushToCloud();
+                alert('✨ 專屬暗號已建立，已將目前資料備份至雲端！');
+            }
+        }
+
+        // 解包雲端數據載入本地
+        function applyCloudData(payload) {
+            if (payload.goodsList) { goodsList = payload.goodsList; localStorage.setItem('goodsTrackerData', JSON.stringify(goodsList)); }
+            if (payload.globalRate) { globalRate = payload.globalRate; localStorage.setItem('goodsTrackerRate', globalRate); }
+            if (payload.ipSettings) { ipSettings = payload.ipSettings; localStorage.setItem('goodsTrackerIpSettings', JSON.stringify(ipSettings)); }
+            if (payload.platformSettings) { platformSettings = payload.platformSettings; localStorage.setItem('goodsTrackerPlatformSettings', JSON.stringify(platformSettings)); }
+            if (payload.headerTitle) { headerTitle = payload.headerTitle; localStorage.setItem('goodsTrackerHeaderTitle', headerTitle); }
+        }
+      
     </script>
 
 </body>
