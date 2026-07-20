@@ -3632,92 +3632,61 @@
 
 
 
-            // ================= 3. 渲染 IP Filters (全新圓形金剛位版) =================
-
+            // ================= 3. 渲染 IP Filters (依數量由多到少排序) =================
             const filterContainer = document.getElementById('ip-filters');
-
             let currentStatusTotal = currentStatusFilter === 'all' ? totalAll : (statusCounts[currentStatusFilter] || 0);
-
                     
-
             let ipHTML = `
-
                 <button class="filter-btn ${currentIPFilter === 'all' ? 'active' : ''}" onclick="filterIP('all', event)">
-
                     <div class="ip-circle-wrapper" style="background-color: var(--primary-light); color: var(--primary-color); border-color: var(--primary-color);">✨</div>
-
                     <div class="ip-circle-text">全部(${currentStatusTotal})</div>
-
                 </button>
-
             `;
-
             
+            // 🎯 複製一份 ipSettings 並根據「當前狀態下的數量 (ipCounts)」進行降序排序
+            let sortedIpSettings = [...ipSettings].sort((a, b) => {
+                // 將「其他」固定排在最後面
+                if (a.id === 'OTHERS') return 1;
+                if (b.id === 'OTHERS') return -1;
 
-            ipSettings.forEach(ip => {
+                const countA = ipCounts[a.id] || 0;
+                const countB = ipCounts[b.id] || 0;
+                return countB - countA; // 數量多的排前面
+            });
 
+            // 🎯 使用排序後的 sortedIpSettings 進行渲染
+            sortedIpSettings.forEach(ip => {
                 let count = ipCounts[ip.id] || 0;
-
                 if (count > 0 || currentIPFilter === ip.id) {
-
                     const countDisplay = count > 0 ? `(${count})` : '';
-
                     let innerContent = '';
-
                     let wrapperStyle = `background-color: ${ip.color}; color: ${ip.textColor || getContrastYIQ(ip.color)};`;
-
                     let displayName = ip.name || ''; 
-
-
 
                     const emojiMatch = ip.name ? ip.name.match(/^[\p{Emoji_Presentation}\p{Extended_Pictographic}]/u) : null;
 
-
-
                     if (ip.pic) {
-
                         innerContent = `<img src="${ip.pic}">`;
-
                         if (emojiMatch) {
-
                             displayName = ip.name.replace(emojiMatch[0], '').trim();
-
                         }
-
                     } else {
-
                         if (emojiMatch) {
-
                             innerContent = emojiMatch[0];
-
                             displayName = ip.name.replace(emojiMatch[0], '').trim(); 
-
                         } else {
-
                             innerContent = ip.name ? ip.name.charAt(0) : '谷';
-
                         }
-
                     }
 
-
-
                     ipHTML += `
-
                         <button class="filter-btn ${currentIPFilter === ip.id ? 'active' : ''}" onclick="filterIP('${ip.id}', event)">
-
                             <div class="ip-circle-wrapper" style="${wrapperStyle}">${innerContent}</div>
-
                             <div class="ip-circle-text">${displayName}${countDisplay}</div>
-
                         </button>
-
                     `;
-
                 }
-
             });
-
             filterContainer.innerHTML = ipHTML;
 
 
