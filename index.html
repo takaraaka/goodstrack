@@ -2295,11 +2295,12 @@
     <!-- 🎯 5. 子分頁 D：雲端同步與系統高級設定 -->
     <div id="subpage-system" class="settings-subpage" style="display: none;">
         
-        <!-- 🎯 在雲端數據同步區塊，加入「斷開連結」按鈕 -->
+        <!-- 🎯 雲端數據同步區塊：加入「修改/轉移」按鈕 -->
         <div class="settings-section-title">🌐 雲端數據同步</div>
-        <div class="settings-add-form" style="margin-bottom: 8px; gap: 6px;">
-            <input type="text" id="supabase-secret-key" class="form-control" placeholder="🔑 輸入專屬暗號 (如: my-goods-2026)" style="flex: 1; height: 32px; font-size: 12px; border-radius: 6px;">
+        <div class="settings-add-form" style="margin-bottom: 8px; gap: 4px; flex-wrap: wrap;">
+            <input type="text" id="supabase-secret-key" class="form-control" placeholder="🔑 輸入專屬暗號 (如: my-goods-2026)" style="flex: 1; min-width: 140px; height: 32px; font-size: 12px; border-radius: 6px;">
             <button class="settings-btn" type="button" onclick="connectCloudSync()" style="padding: 4px 8px; font-size: 11px;">🔄 同步</button>
+            <button class="settings-btn" type="button" onclick="changeSecretKey()" style="padding: 4px 8px; font-size: 11px; background: #e56b3f;">✍️ 修改</button>
             <button class="settings-btn" type="button" onclick="disconnectCloudSync()" style="padding: 4px 8px; font-size: 11px; background: #8c7e81;">🔌 斷開</button>
         </div>
         <div id="sync-status-tip" style="font-size: 10px; color: var(--primary-color); margin-bottom: 12px; padding-left: 2px;">
@@ -4430,6 +4431,25 @@
                 render();
                 
                 alert('✨ 已成功斷開連結並清空數據！');
+            }
+        }
+
+        // 🎯 修改 / 轉移專屬暗號功能
+        async function changeSecretKey() {
+            const newKey = document.getElementById('supabase-secret-key').value.trim();
+            
+            if (!newKey) return alert('請先輸入你想修改成的新暗號！');
+            if (newKey === userSecretKey) return alert('新暗號與目前使用的暗號相同，無需修改！');
+
+            if (confirm(`確定要將暗號由「${userSecretKey || '無'}」修改為「${newKey}」嗎？\n\n這會將你目前的本地數據綁定並上傳至新暗號！`)) {
+                // 1. 更新本地 Secret Key 紀錄
+                userSecretKey = newKey;
+                localStorage.setItem('goodsTrackerSecretKey', userSecretKey);
+
+                // 2. 立即將目前的本地數據推送到新暗號的雲端位置
+                await pushToCloud();
+
+                alert(`✨ 暗號已成功修改為「${newKey}」，並已將數據同步至新暗號！`);
             }
         }
 
