@@ -3864,6 +3864,7 @@
                         <!-- 🎯 1. 加上 flex-direction: column 與 justify-content: space-between 確保底部對齊 -->
                         <div class="goods-details" style="display: flex; flex-direction: column; justify-content: space-between; height: 100px;">
                             <!-- 上半部：標題、平台、下單日期 -->
+                            <<!-- 上半部：標題、平台、下單日期 -->
                             <div>
                                 <div class="goods-title">${item.item}</div>
                                 
@@ -3872,8 +3873,8 @@
                                     <span style="color: var(--text-light); font-size: 11px;">HKD <span class="total-cost-tag">${totalCostHKD.toFixed(2)}</span></span>
                                 </div>
 
-                                <!-- 🎯 2. 加上 padding-left: 2px，讓日曆 Emoji 向右移少少對齊上面平台 Emoji -->
-                                <div class="goods-meta" style="padding-left: 2px;">
+                                <!-- 🎯 加上 margin-top: 5px; 拉開與上面平台的距離 -->
+                                <div class="goods-meta" style="padding-left: 2px; margin-top: 5px;">
                                     <span class="meta-item" style="font-size: 11px; color: var(--text-light); background: transparent; padding: 0;">
                                         📅 ${item.date || '無日期'} 下單
                                     </span>
