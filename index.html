@@ -712,10 +712,7 @@
             margin-bottom: 8px;
             background: transparent;
             padding: 8px 4px 0px 4px;
-
-            /* 🎯 加上呢兩行：令頂部狀態 Tab 右邊都有自然羽化漸變！ */
-            -webkit-mask-image: linear-gradient(to right, black 85%, transparent 100%);
-            mask-image: linear-gradient(to right, black 85%, transparent 100%);
+            overflow-x: auto; /* 確保滑動正常 */
         }
 
         
@@ -776,6 +773,11 @@
 
         }
 
+        /* 🎯 預設遮罩 Class：滾動時套用 */
+        .scroll-mask-right {
+            -webkit-mask-image: linear-gradient(to right, black 80%, transparent 100%);
+            mask-image: linear-gradient(to right, black 80%, transparent 100%);
+        }
 
 
         #ip-filters {
@@ -783,10 +785,7 @@
             gap: 4px;
             padding: 4px 8px;
             align-items: flex-start;
-
-            /* 🎯 加上呢兩行：最右側 15% 做羽化漸變淡出效果 */
-            -webkit-mask-image: linear-gradient(to right, black 80%, transparent 100%);
-            mask-image: linear-gradient(to right, black 80%, transparent 100%);
+            overflow-x: auto; /* 確保滑動正常 */
         }
 
         #ip-filters .filter-btn {
@@ -3876,7 +3875,10 @@
 
             });
 
-        }
+            
+            setTimeout(setupDynamicMasks, 50);
+
+        } 
 
 
 
@@ -4422,6 +4424,30 @@
             if (payload.ipSettings) { ipSettings = payload.ipSettings; localStorage.setItem('goodsTrackerIpSettings', JSON.stringify(ipSettings)); }
             if (payload.platformSettings) { platformSettings = payload.platformSettings; localStorage.setItem('goodsTrackerPlatformSettings', JSON.stringify(platformSettings)); }
             if (payload.headerTitle) { headerTitle = payload.headerTitle; localStorage.setItem('goodsTrackerHeaderTitle', headerTitle); }
+        }
+
+        // 🎯 判斷是否滑動到最右側，動態開關羽化 Class
+        function handleScrollMask(el) {
+            // clientWidth + scrollLeft 接近 scrollWidth 即代表到了最右邊
+            const isAtEnd = el.scrollWidth - el.clientWidth - el.scrollLeft <= 3;
+            if (isAtEnd) {
+                el.classList.remove('scroll-mask-right');
+            } else {
+                el.classList.add('scroll-mask-right');
+            }
+        }
+
+        function setupDynamicMasks() {
+            const statusEl = document.getElementById('status-filters');
+            const ipEl = document.getElementById('ip-filters');
+
+            [statusEl, ipEl].forEach(el => {
+                if (!el) return;
+                // 初始化檢查一次
+                handleScrollMask(el);
+                // 綁定 scroll 事件
+                el.onscroll = () => handleScrollMask(el);
+            });
         }
       
     </script>
