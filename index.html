@@ -2144,12 +2144,10 @@
 
             </div>
 
-            <div class="stat-item">
-
+            <!-- 🎯 加上 id="balance-stat-card" 同 onclick 事件 -->
+            <div class="stat-item" id="balance-stat-card" onclick="toggleBalanceFilter()" style="cursor: pointer; transition: all 0.2s;">
                 <div class="label">尾款 💸</div>
-
                 <div class="value" id="total-balance">¥0</div>
-
             </div>
 
         </div>
@@ -2764,6 +2762,8 @@
 
         let currentIPFilter = 'all';
 
+        let isBalanceFilterActive = false; // 🎯 紀錄是否開啟「只睇有尾款」Filter
+
 
 
         document.getElementById('global-rate').value = globalRate;
@@ -2820,6 +2820,12 @@
 
             try { localStorage.setItem('goodsTrackerHeaderTitle', headerTitle); alert('手帳標題已成功儲存！'); } catch(e){}
 
+        }
+
+        // 🎯 點擊「尾款」卡片切換篩選狀態
+        function toggleBalanceFilter() {
+            isBalanceFilterActive = !isBalanceFilterActive;
+            render();
         }
 
 
@@ -3695,6 +3701,18 @@
 
             calculateStats();
 
+            // 🎯 更新尾款卡片高亮狀態（Active 時變粉紅 Highlight 樣式）
+            const balCard = document.getElementById('balance-stat-card');
+            if (balCard) {
+                if (isBalanceFilterActive) {
+                    balCard.classList.add('highlight-stat');
+                    balCard.style.border = '1px solid var(--primary-color)';
+                } else {
+                    balCard.classList.remove('highlight-stat');
+                    balCard.style.border = '1px solid #fdfdfd';
+                }
+            }
+
             const container = document.getElementById('goods-container'); 
 
             container.innerHTML = '';
@@ -3702,13 +3720,16 @@
             
 
             let filteredList = goodsList.filter(item => {
-
                 let statusMatch = currentStatusFilter === 'all' ? true : item.status === currentStatusFilter;
-
                 let ipMatch = currentIPFilter === 'all' ? true : (Array.isArray(item.ip) ? item.ip.includes(currentIPFilter) : item.ip === currentIPFilter);
+                
+                // 🎯 如果開啟咗尾款 Filter，只顯示「未全付 + 尾款 > 0 + 狀態未完成」嘅項目
+                let balanceMatch = true;
+                if (isBalanceFilterActive) {
+                    balanceMatch = !item.fullpaid && (item.balance > 0) && item.status !== '完成';
+                }
 
-                return statusMatch && ipMatch;
-
+                return statusMatch && ipMatch && balanceMatch;
             });
 
 
