@@ -297,7 +297,7 @@
 
 
         .rate-setting input[type="number"] {
-            width: 62px; /* 👈 🎯 由原本嘅 50px 加寬到 62px，足夠完整顯示 1.168！ */
+            width: 52px;
             padding: 2px 4px;
             border: 1px solid var(--border-color);
             border-radius: 4px;
@@ -305,6 +305,13 @@
             font-weight: bold;
             color: var(--primary-color);
             font-size: 11px;
+        }
+
+        /* 🎯 隱藏 number input 的上下微調箭頭 */
+        .rate-setting input[type="number"]::-webkit-outer-spin-button,
+        .rate-setting input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
         }
 
 
