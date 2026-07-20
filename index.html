@@ -707,17 +707,15 @@
 
 
         #status-filters {
-
             border-bottom: 1px solid var(--border-color);
-
             padding-bottom: 0px;
-
             margin-bottom: 8px;
-
             background: transparent;
-
             padding: 8px 4px 0px 4px;
 
+            /* 🎯 加上呢兩行：令頂部狀態 Tab 右邊都有自然羽化漸變！ */
+            -webkit-mask-image: linear-gradient(to right, black 85%, transparent 100%);
+            mask-image: linear-gradient(to right, black 85%, transparent 100%);
         }
 
         
