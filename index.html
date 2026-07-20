@@ -3849,68 +3849,50 @@
 
 
                 card.innerHTML = `
-
                     <div class="goods-header">
-
                         <div class="ip-badges-wrapper">${ipBadgesHTML}</div>
-
                         <span class="status-select-btn ${statusClass}" onclick="toggleStatus(${actualIndex}, event)">${item.status} 🔄</span>
-
                     </div>
-
                     <div class="goods-body">
-
                         <div class="goods-pic" onclick="${isRealImage ? `openLightbox('${item.pic}', event)` : ''}">
-    ${isRealImage ? `<img src="${item.pic}">` : `<span>${item.pic || '📸 暫無相片'}</span>`}
-    
-    <!-- 🎯 核心改動：只有喺有填寫到貨日期、而且唔係「未註明」嘅情況下，先會顯示左下角 Badge -->
-    ${(item.arrived && item.arrived.trim() !== '' && !item.arrived.includes('未註明')) 
-        ? `<div class="pic-arrived-badge">📦 ${item.arrived}</div>` 
-        : ''}
-</div>
-
-    <div class="goods-details">
-      <div>
-        <div class="goods-title">${item.item}</div>
-        
-        <div style="display: flex; gap: 8px; align-items: center; margin-top: 6px; margin-bottom: 6px; font-size: 12px;">
-            <span class="platform-tag">${platIconHTML}${platNameDisplay}</span>
-            <span style="color: var(--text-light); font-size: 11px;">HKD <span class="total-cost-tag">${totalCostHKD.toFixed(2)}</span></span>
-        </div>
-
-          <div class="goods-meta">
-            <span class="meta-item" style="font-size: 11px; color: var(--text-light); background: transparent; padding: 0;">
-                📅 <sup>17</sup>&nbsp;${item.date || '無日期'} 下單
-            </span>
-          </div>
-      </div>
-    </div>
-  </div>
-
-                    <div class="goods-financials">
-
-                        <div class="financial-row">
-
-                            <div>已付: <span class="price-tag">${originalPaidDisplay}</span></div>
-
-                            <div>尾款: ${item.balance ? `<span class="balance-tag">${((item.balanceCurrency || 'RMB') === 'RMB' ? '¥' : '$') + item.balance}</span>` : `<span style="color:var(--text-light);">無</span>`}</div>
-
-                            <div>${item.balance > 0 && !item.fullpaid ? '<span style="color:#e56b3f; font-weight:bold;">⏳ 待補款</span>' : '<span style="color:#55a630; font-weight:bold;">✅ 已付款</span>'}</div>
-
+                            ${isRealImage ? `<img src="${item.pic}">` : `<span>${item.pic || '📸 暫無相片'}</span>`}
+                            ${(item.arrived && item.arrived.trim() !== '' && !item.arrived.includes('未註明')) 
+                                ? `<div class="pic-arrived-badge">📦 ${item.arrived}</div>` 
+                                : ''}
                         </div>
 
+                        <div class="goods-details">
+                            <div>
+                                <div class="goods-title">${item.item}</div>
+                                
+                                <div style="display: flex; gap: 8px; align-items: center; margin-top: 4px; margin-bottom: 4px; font-size: 12px;">
+                                    <span class="platform-tag">${platIconHTML}${platNameDisplay}</span>
+                                    <span style="color: var(--text-light); font-size: 11px;">HKD <span class="total-cost-tag">${totalCostHKD.toFixed(2)}</span></span>
+                                </div>
+
+                                <div class="goods-meta" style="display: flex; flex-direction: column; gap: 3px; margin-top: 4px;">
+                                    <!-- 🎯 1. 下單日期（已移除多餘的 17） -->
+                                    <span class="meta-item" style="font-size: 11px; color: var(--text-light); background: transparent; padding: 0;">
+                                        📅 ${item.date || '無日期'} 下單
+                                    </span>
+                                    
+                                    <!-- 🎯 2. 已付、尾款與付款狀態（整合到右側區域） -->
+                                    <div style="font-size: 11px; color: var(--text-light); display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                                        <span>已付: <span class="price-tag">${originalPaidDisplay}</span></span>
+                                        <span>尾款: ${item.balance ? `<span class="balance-tag">${((item.balanceCurrency || 'RMB') === 'RMB' ? '¥' : '$') + item.balance}</span>` : `無`}</span>
+                                        <span>${item.balance > 0 && !item.fullpaid ? '<span style="color:#e56b3f; font-weight:bold;">⏳ 待補款</span>' : '<span style="color:#55a630; font-weight:bold;">✅ 已付款</span>'}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
-                    ${item.remarks ? `<div class="remarks-section">📝 ${item.remarks}</div>` : ''}
+                    ${item.remarks ? `<div class="remarks-section" style="margin-top: 6px;">📝 ${item.remarks}</div>` : ''}
 
                     <div class="card-actions">
-
                         <button type="button" class="action-btn duplicate" onclick="duplicateGoods(${actualIndex})" style="color:#6c757d;">複製</button>
-
                         <button type="button" class="action-btn edit" onclick="editGoods(${actualIndex})">修改</button>
-
                         <button type="button" class="action-btn delete" onclick="deleteGoods(${actualIndex})">刪除</button>
-
                     </div>`;
 
                 container.appendChild(card);
