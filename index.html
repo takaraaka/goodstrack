@@ -782,9 +782,13 @@
 
         #ip-filters {
             display: flex;
-            gap: 4px; /* 🎯 1. 由原本的 12px 改細為 4px (或者 6px)，讓圓形擠近一點 */
+            gap: 4px;
             padding: 4px 8px;
             align-items: flex-start;
+
+            /* 🎯 加上呢兩行：最右側 15% 做羽化漸變淡出效果 */
+            -webkit-mask-image: linear-gradient(to right, black 80%, transparent 100%);
+            mask-image: linear-gradient(to right, black 80%, transparent 100%);
         }
 
         #ip-filters .filter-btn {
@@ -813,31 +817,18 @@
 
 
         #ip-filters .ip-circle-wrapper {
-
             width: 46px;
-
             height: 46px;
-
             border-radius: 50%;
-
             display: flex;
-
             align-items: center;
-
             justify-content: center;
-
-            margin-bottom: 4px;
-
+            margin-bottom: 6px; /* 👈 🎯 喺度拉開距離！原本係 4px，改做 6px 或 7px */
             font-size: 11px;
-
             font-weight: bold;
-
             overflow: hidden;
-
             border: 1px solid var(--border-color);
-
             transition: all 0.2s ease;
-
         }
 
 
@@ -866,7 +857,7 @@
 
         #ip-filters .ip-circle-text {
 
-            font-size: 10px;
+            font-size: 9px;
 
             line-height: 1.2;
 
