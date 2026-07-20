@@ -2322,15 +2322,26 @@
     <!-- 🎯 5. 子分頁 D：雲端同步與系統高級設定 -->
     <div id="subpage-system" class="settings-subpage" style="display: none;">
         
+        <<!-- 🎯 將按鈕的 font-size 改為 11px，高度與內邊距微調成一致 -->
         <div class="settings-section-title">🌐 雲端數據同步</div>
         <div class="settings-add-form" style="margin-bottom: 8px; gap: 8px;">
             <input type="text" id="supabase-secret-key" class="form-control" placeholder="🔑 輸入專屬暗號 (如: my-goods-2026)" style="flex: 1; height: 32px; font-size: 12px; border-radius: 6px;">
-            <button class="settings-btn" type="button" onclick="connectCloudSync()" style="padding: 0 12px; height: 32px; font-size: 12px; white-space: nowrap;">🔄 連結/同步</button>
+            <button class="settings-btn" type="button" onclick="connectCloudSync()" style="padding: 4px 10px; font-size: 11px;">🔄 連結/同步</button>
         </div>
-        <div id="sync-status-tip" style="font-size: 10px; color: var(--primary-color); margin-bottom: 16px; padding-left: 2px;">
+        <div id="sync-status-tip" style="font-size: 10px; color: var(--primary-color); margin-bottom: 12px; padding-left: 2px;">
             💡 提示：手機和電腦輸入同一個暗號，打開網頁時就會自動比對更新！
         </div>
+
+        <!-- 🎯 新增這行：獨立的強制覆蓋按鈕 -->
+        <div style="text-align: right; margin-bottom: 16px;">
+            <button class="action-btn" type="button" onclick="forceUploadToCloud()" style="font-size: 10px; color: var(--text-light); font-weight: bold; text-decoration: underline; background: none; border: none; cursor: pointer;">
+                ⬆️ 強制以本地資料覆蓋雲端
+            </button>
+        </div>
+        
         <hr style="border: none; border-top: 1px dashed var(--border-color); margin-bottom: 16px;">
+
+      
 
         <div class="settings-section-title">🛠️ 系統高級設定</div>
         
@@ -4407,7 +4418,7 @@
             } catch (err) { console.error('同步雲端失敗:', err); }
         }
 
-        // 🎯 4. 點擊「連結/同步」按鈕
+        // 🎯 點擊「連結/同步」按鈕 (安全版：只讀取雲端，防止誤覆蓋)
         async function connectCloudSync() {
             const keyInput = document.getElementById('supabase-secret-key').value.trim();
             if (!keyInput) return alert('請輸入暗號！');
@@ -4423,19 +4434,25 @@
                 .single();
 
             if (data && data.data_json) {
-                if (confirm('☁️ 發現雲端已有備份！是否載入雲端數據？\n\n【確定】載入雲端資料\n【取消】將目前的本地資料覆蓋到雲端')) {
-                    applyCloudData(data.data_json);
-                    lastSyncTime = new Date(data.updated_at).getTime();
-                    localStorage.setItem('goodsTrackerLastSyncTime', lastSyncTime);
-                    render();
-                    alert('✨ 已成功載入雲端數據！');
-                } else {
-                    await pushToCloud();
-                    alert('✨ 已將本地數據同步推送到雲端！');
-                }
+                // 🛡️ 安全邏輯：只要雲端有紀錄，直接無腦載入！完全不給「誤觸覆蓋」的機會
+                applyCloudData(data.data_json);
+                lastSyncTime = new Date(data.updated_at).getTime();
+                localStorage.setItem('goodsTrackerLastSyncTime', lastSyncTime);
+                render();
+                alert('✨ 已成功連結暗號，並為你載入雲端最新數據！');
             } else {
+                // 如果是全新的暗號（雲端完全沒紀錄），才把目前的資料上傳
                 await pushToCloud();
                 alert('✨ 專屬暗號已建立，已將目前資料備份至雲端！');
+            }
+        }
+
+        // 🎯 獨立按鈕：強制將本地覆蓋到雲端 (極少用到，需要雙重確認)
+        async function forceUploadToCloud() {
+            if (!userSecretKey) return alert('請先輸入並連結暗號！');
+            if (confirm('⚠️ 確定要將「目前的本地數據」強制覆蓋到雲端嗎？\n\n這會取代雲端上原本的備份紀錄！')) {
+                await pushToCloud();
+                alert('✨ 已成功將本地數據強制推送到雲端！');
             }
         }
 
