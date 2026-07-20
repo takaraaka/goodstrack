@@ -4434,22 +4434,36 @@
             }
         }
 
-        // 🎯 修改 / 轉移專屬暗號功能
+        // 🎯 修改 / 搬家專屬暗號功能 (寫入新暗號，並清空舊暗號)
         async function changeSecretKey() {
             const newKey = document.getElementById('supabase-secret-key').value.trim();
+            const oldKey = userSecretKey;
             
             if (!newKey) return alert('請先輸入你想修改成的新暗號！');
-            if (newKey === userSecretKey) return alert('新暗號與目前使用的暗號相同，無需修改！');
+            if (newKey === oldKey) return alert('新暗號與目前使用的暗號相同，無需修改！');
 
-            if (confirm(`確定要將暗號由「${userSecretKey || '無'}」修改為「${newKey}」嗎？\n\n這會將你目前的本地數據綁定並上傳至新暗號！`)) {
-                // 1. 更新本地 Secret Key 紀錄
+            if (confirm(`確定要將數據由「${oldKey || '無'}」轉移至新暗號「${newKey}」嗎？\n\n⚠️ 注意：轉移後，舊暗號「${oldKey}」在雲端的資料將會被完全刪除！`)) {
+                
+                // 1. 先將目前的數據推送到新暗號
                 userSecretKey = newKey;
                 localStorage.setItem('goodsTrackerSecretKey', userSecretKey);
-
-                // 2. 立即將目前的本地數據推送到新暗號的雲端位置
                 await pushToCloud();
 
-                alert(`✨ 暗號已成功修改為「${newKey}」，並已將數據同步至新暗號！`);
+                // 2. 如果之前有舊暗號，向 Supabase 刪除舊暗號的紀錄
+                if (oldKey) {
+                    try {
+                        const { error } = await supabaseClient
+                            .from('user_data')
+                            .delete()
+                            .eq('secret_key', oldKey);
+                            
+                        if (error) console.error('刪除舊暗號失敗:', error);
+                    } catch (err) {
+                        console.error('刪除舊暗號失敗:', err);
+                    }
+                }
+
+                alert(`✨ 數據已成功搬家至「${newKey}」！\n舊暗號「${oldKey}」的雲端資料已清空。`);
             }
         }
 
