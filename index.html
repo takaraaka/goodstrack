@@ -4410,16 +4410,26 @@
             }
         }
 
+        // 🎯 斷開雲端連結功能（並清空本地數據，回復乾淨狀態）
         function disconnectCloudSync() {
             if (!userSecretKey) return alert('目前尚未連結任何暗號！');
             
-            if (confirm('確定要斷開雲端連結嗎？\n\n斷開後本地資料不會消失，但將暫停自動同步功能。')) {
+            if (confirm('確定要斷開雲端連結嗎？\n\n斷開後會清空目前顯示的雲端數據，回復初始乾淨狀態。')) {
+                // 1. 清除雲端同步暗號與時間戳
                 userSecretKey = '';
                 lastSyncTime = 0;
                 localStorage.removeItem('goodsTrackerSecretKey');
                 localStorage.removeItem('goodsTrackerLastSyncTime');
+
+                // 2. 清空本地暫存的數據，重置為預設狀態
+                goodsList = []; // 或者設為 [] 完全清空
+                localStorage.removeItem('goodsTrackerData');
+                
+                // 3. 重置輸入框與更新畫面
                 document.getElementById('supabase-secret-key').value = '';
-                alert('✨ 已成功斷開雲端連結！');
+                render();
+                
+                alert('✨ 已成功斷開連結並清空數據！');
             }
         }
 
