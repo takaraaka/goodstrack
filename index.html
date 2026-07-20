@@ -2295,11 +2295,12 @@
     <!-- 🎯 5. 子分頁 D：雲端同步與系統高級設定 -->
     <div id="subpage-system" class="settings-subpage" style="display: none;">
         
-        <!-- 🎯 將按鈕的 font-size 改為 11px，高度與內邊距微調成一致 -->
+        <!-- 🎯 在雲端數據同步區塊，加入「斷開連結」按鈕 -->
         <div class="settings-section-title">🌐 雲端數據同步</div>
-        <div class="settings-add-form" style="margin-bottom: 8px; gap: 8px;">
+        <div class="settings-add-form" style="margin-bottom: 8px; gap: 6px;">
             <input type="text" id="supabase-secret-key" class="form-control" placeholder="🔑 輸入專屬暗號 (如: my-goods-2026)" style="flex: 1; height: 32px; font-size: 12px; border-radius: 6px;">
-            <button class="settings-btn" type="button" onclick="connectCloudSync()" style="padding: 4px 10px; font-size: 11px;">🔄 連結/同步</button>
+            <button class="settings-btn" type="button" onclick="connectCloudSync()" style="padding: 4px 8px; font-size: 11px;">🔄 同步</button>
+            <button class="settings-btn" type="button" onclick="disconnectCloudSync()" style="padding: 4px 8px; font-size: 11px; background: #8c7e81;">🔌 斷開</button>
         </div>
         <div id="sync-status-tip" style="font-size: 10px; color: var(--primary-color); margin-bottom: 12px; padding-left: 2px;">
             💡 提示：手機和電腦輸入同一個暗號，打開網頁時就會自動比對更新！
@@ -4406,6 +4407,19 @@
                 // 如果是全新的暗號（雲端完全沒紀錄），才把目前的資料上傳
                 await pushToCloud();
                 alert('✨ 專屬暗號已建立，已將目前資料備份至雲端！');
+            }
+        }
+
+        function disconnectCloudSync() {
+            if (!userSecretKey) return alert('目前尚未連結任何暗號！');
+            
+            if (confirm('確定要斷開雲端連結嗎？\n\n斷開後本地資料不會消失，但將暫停自動同步功能。')) {
+                userSecretKey = '';
+                lastSyncTime = 0;
+                localStorage.removeItem('goodsTrackerSecretKey');
+                localStorage.removeItem('goodsTrackerLastSyncTime');
+                document.getElementById('supabase-secret-key').value = '';
+                alert('✨ 已成功斷開雲端連結！');
             }
         }
 
