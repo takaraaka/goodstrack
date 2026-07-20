@@ -781,45 +781,25 @@
 
 
         #ip-filters {
-
             display: flex;
-
-            gap: 12px;
-
+            gap: 4px; /* 🎯 1. 由原本的 12px 改細為 4px (或者 6px)，讓圓形擠近一點 */
             padding: 4px 8px;
-
             align-items: flex-start;
-
         }
 
-
-
         #ip-filters .filter-btn {
-
             display: inline-flex;
-
             flex-direction: column;
-
             align-items: center;
-
             justify-content: center;
-
             background: transparent !important;
-
             border: none !important;
-
             padding: 0 !important;
-
             margin: 0 !important;
-
-            width: 64px;
-
-            min-width: 64px;
-
+            width: 52px;     /* 🎯 2. 由原本的 64px 縮小為 52px (貼合 46px 的圓圈) */
+            min-width: 52px; /* 🎯 3. 同步改為 52px，防止文字或空間被強制撐開 */
             cursor: pointer;
-
             color: var(--text-light) !important;
-
         }
 
 
