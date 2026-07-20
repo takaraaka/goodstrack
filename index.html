@@ -2189,7 +2189,7 @@
 
         <div class="rate-setting" id="rate-setting-wrapper">
 
-            <div id="rate-container">💰 預設匯率 1 RMB = <input type="number" step="0.01" id="global-rate" value="1.16" onchange="updateGlobalRate()"> HKD</div>
+            <div id="rate-container">💰 預設匯率 1 RMB = <input type="number" step="0.001" id="global-rate" value="1.16" onchange="updateGlobalRate()"> HKD</div>
 
             <span class="system-settings-toggle" onclick="toggleSystemSettings()">⚙️ 系統設定</span>
 
@@ -2789,7 +2789,7 @@
 
 
 
-        document.getElementById('global-rate').value = globalRate.toFixed(2);
+        document.getElementById('global-rate').value = globalRate;
 
 
 
@@ -3513,6 +3513,7 @@
 
             let parts = [];
 
+            // 🎯 預覽折算同樣保留 .toFixed(2)
             if (amount > 0) parts.push(currency === 'RMB' ? `已付: ¥${amount} (折合 $${(amount * globalRate).toFixed(2)} HKD)` : `已付: $${amount} HKD`);
 
             if (balAmount > 0) parts.push(balCurrency === 'RMB' ? `尾款: ¥${balAmount} (折合 $${(balAmount * globalRate).toFixed(2)} HKD)` : `尾款: $${balAmount} HKD`);
@@ -3820,6 +3821,7 @@
 
                 const balCurrency = item.balanceCurrency || 'RMB'; 
 
+                // 🎯 匯率會用 1.168 精確計算，但 .toFixed(2) 會將最終 HKD 格式化成小數點後 2 位
                 const totalCostHKD = (isRMB ? (item.paid * globalRate) : item.paid) + (balCurrency === 'RMB' ? ((item.balance || 0) * globalRate) : (item.balance || 0));
 
 
