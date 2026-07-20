@@ -3051,27 +3051,21 @@
 
 
             const platformContainer = document.getElementById('platform-manager-list'); platformContainer.innerHTML = '';
-
             platformSettings.forEach(plat => {
-
-                const iconTag = plat.pic ? `<img src="${plat.pic}" class="platform-tag-icon">` : '🛒 ';
-
+                // 🎯 判斷名稱開頭是否有 Emoji
+                const hasEmoji = plat.name ? /^[\p{Emoji_Presentation}\p{Extended_Pictographic}]/u.test(plat.name.trim()) : false;
+                
+                // 如果有上傳圖片就用圖片；如果名稱開頭有 Emoji 就不用預設購物車 🛒；否則用 🛒
+                const iconTag = plat.pic ? `<img src="${plat.pic}" class="platform-tag-icon">` : (hasEmoji ? '' : '🛒 ');
+                
                 platformContainer.innerHTML += `
-
                     <div class="settings-item">
-
                         <span style="font-size:12px; font-weight:bold; display:inline-flex; align-items:center; gap:4px;">${iconTag}${plat.name || '(純Icon平台)'}</span>
-
                         <div>
-
                             <button class="action-btn edit" onclick="startEditPlatform('${plat.id}')" style="padding: 2px 4px; font-size:11px;">修改</button>
-
                             ${plat.id !== '其他' ? `<button class="action-btn delete" onclick="deletePlatform('${plat.id}')" style="padding: 2px 4px; font-size:11px;">刪除</button>` : ''}
-
                         </div>
-
                     </div>`;
-
             });
 
         }
@@ -3391,15 +3385,14 @@
 
 
         function renderFormPlatforms() {
-
             const select = document.getElementById('form-platform'); select.innerHTML = '';
-
             platformSettings.forEach(plat => {
-
-                select.innerHTML += `<option value="${plat.id}">${plat.name || '(純Icon平台)'}</option>`;
-
+                const platName = plat.name || '(純Icon平台)';
+                const hasEmoji = /^[\p{Emoji_Presentation}\p{Extended_Pictographic}]/u.test(platName.trim());
+                // 下拉選單中，如果有圖片或已有 Emoji 就只顯示名稱，否則補上 🛒
+                const prefix = plat.pic ? '' : (hasEmoji ? '' : '🛒 ');
+                select.innerHTML += `<option value="${plat.id}">${prefix}${platName}</option>`;
             });
-
         }
 
 
@@ -3813,9 +3806,10 @@
 
                 const platSetting = platformSettings.find(p => p.id === item.platform);
 
-                const platIconHTML = (platSetting && platSetting.pic) ? `<img src="${platSetting.pic}" class="platform-tag-icon">` : '🛒 ';
-
-                const platNameDisplay = (platSetting && platSetting.name) ? platSetting.name : (item.platform || '其他');
+                const platName = (platSetting && platSetting.name) ? platSetting.name : (item.platform || '其他');
+                const hasEmoji = /^[\p{Emoji_Presentation}\p{Extended_Pictographic}]/u.test(platName.trim());
+                const platIconHTML = (platSetting && platSetting.pic) ? `<img src="${platSetting.pic}" class="platform-tag-icon">` : (hasEmoji ? '' : '🛒 ');
+                const platNameDisplay = platName;
 
 
 
