@@ -2801,19 +2801,19 @@
 
 
         function updateGlobalRate() {
-
             const inputVal = parseFloat(document.getElementById('global-rate').value);
-
             if (!isNaN(inputVal) && inputVal > 0) {
-
                 globalRate = inputVal;
-
-                try { localStorage.setItem('goodsTrackerRate', globalRate); } catch(e){}
-
-                calculateConvertedPrice(); render();
-
+                try { 
+                    localStorage.setItem('goodsTrackerRate', globalRate); 
+                } catch(e){}
+                
+                calculateConvertedPrice(); 
+                render();
+                
+                // 🎯 關鍵修正：修改匯率時，立即同步推送到 Supabase 雲端！
+                pushToCloud(); 
             }
-
         }
 
 
