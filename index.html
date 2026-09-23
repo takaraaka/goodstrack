@@ -2742,18 +2742,29 @@
             const sortSelect = document.getElementById('sort-select');
             if (sortSelect) sortSelect.value = currentSortMode;
         
-            // 1. 先讀取本地輸入框的暗號
+            // 🎯 1. 預設過濾狀態設為 'all'，防止過濾器隱藏物品
+            currentStatusFilter = 'all';
+            currentIPFilter = 'all';
+
+            // 🎯 2. 先繪製一次基礎 UI (確保 IP Filter 和狀態欄第一時間印出來，不會一片空白)
+            renderSettingsManager();
+            renderFormPlatforms();
+            renderFormIpTags();
+            render();
+
+            // 🎯 3. 如果有暗號，開啟下載鎖並等待 Supabase 最新的資料
             if (userSecretKey) {
                 const input = document.getElementById('supabase-secret-key');
                 if (input) input.value = userSecretKey;
                 
-                // 🎯 關鍵：加 await 強制手機等 Supabase 回傳完成才繼續！
-                await autoCheckAndSync();
-            } else {
-                // 如果連暗號都沒有，才 Render 本地預設值
-                renderSettingsManager();
-                currentStatusFilter = '待發貨';
-                render();
+                try {
+                    isDownloading = true; // 開鎖：禁止 autoCheckAndSync 期間觸發 PUSH 上傳
+                    await autoCheckAndSync();
+                } catch (e) {
+                    console.error("雲端同步失敗:", e);
+                } finally {
+                    isDownloading = false; // 解鎖
+                }
             }
         });
 
@@ -3188,10 +3199,10 @@
             try {
                 console.log("🌐 正在從 Supabase 抓取雲端最新資料...");
                 
-                // 從 Supabase 讀取
+                // 🎯 修正：統一使用 'user_data' 表格，並讀取 'data_json' 欄位
                 const { data, error } = await supabaseClient
-                    .from('goods_tracker') // ⚠️ 請確保這裏是你的 Supabase Table 名稱
-                    .select('*')
+                    .from('user_data')
+                    .select('data_json, updated_at')
                     .eq('secret_key', userSecretKey)
                     .single();
         
@@ -3200,39 +3211,23 @@
                     return;
                 }
         
-                if (data && data.content) {
-                    let cloudContent = typeof data.content === 'string' ? JSON.parse(data.content) : data.content;
+                if (data && data.data_json) {
+                    const cloudPayload = typeof data.data_json === 'string' ? JSON.parse(data.data_json) : data.data_json;
                     
-                    // 🎯 關鍵：解析雲端陣列
-                    let fetchedGoods = cloudContent.goodsList || cloudContent.items || cloudContent;
-        
-                    if (Array.isArray(fetchedGoods) && fetchedGoods.length > 0) {
-                        // 1. 強制更新記憶體中的全域變數
-                        goodsList = fetchedGoods;
-                        if (cloudContent.ipSettings) ipSettings = cloudContent.ipSettings;
-                        if (cloudContent.platformSettings) platformSettings = cloudContent.platformSettings;
-                        if (cloudContent.headerTitle) headerTitle = cloudContent.headerTitle;
-        
-                        // 2. 寫回手機 LocalStorage 做二次備份
-                        try {
-                            localStorage.setItem('goodsTrackerData', JSON.stringify(goodsList));
-                            localStorage.setItem('goodsTrackerIpSettings', JSON.stringify(ipSettings));
-                            localStorage.setItem('goodsTrackerPlatformSettings', JSON.stringify(platformSettings));
-                        } catch(e) {
-                            console.warn("LocalStorage 滿了，但記憶體已成功載入！");
-                        }
-        
-                        console.log("✅ 成功繪製雲端的 " + goodsList.length + " 筆谷子資料！");
-        
-                        // 3. 🎯 核心關鍵：立即呼叫 render() 重畫畫面！
-                        renderSettingsManager();
-                        render();
+                    // 🎯 使用 applyCloudData 進行全自動解包、更新全域變數與重繪畫面！
+                    applyCloudData(cloudPayload);
+
+                    if (data.updated_at) {
+                        lastSyncTime = new Date(data.updated_at).getTime();
+                        try { localStorage.setItem('goodsTrackerLastSyncTime', lastSyncTime); } catch(e){}
                     }
+
+                    console.log("✅ 成功繪製雲端資料！");
                 }
             } catch (err) {
                 console.error("❌ 同步發生錯誤:", err);
             }
-}
+        }
 
         // 🎯 推送本地最新資料到雲端
         async function pushToCloud() {
