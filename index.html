@@ -3619,7 +3619,7 @@
             }
         }
 
-        // 4. 開網頁自動背景同步
+        // 🎯 背景自動比對並更新
         async function autoCheckAndSync() {
             if (!userSecretKey) return;
             try {
@@ -3631,13 +3631,23 @@
 
                 if (data && data.data_json) {
                     const cloudTime = new Date(data.updated_at).getTime();
-                    if (cloudTime > lastSyncTime) {
+                    
+                    // 如果雲端時間比本地新，或是第一次載入，立刻套用並重繪！
+                    if (cloudTime > lastSyncTime || !lastSyncTime) {
                         applyCloudData(data.data_json);
                         lastSyncTime = cloudTime;
                         try { localStorage.setItem('goodsTrackerLastSyncTime', lastSyncTime); } catch(e){}
+                        
+                        // 🎯 即時重繪畫面
+                        renderSettingsManager();
+                        renderFormPlatforms();
+                        renderFormIPs();
+                        render();
                     }
                 }
-            } catch(e) {}
+            } catch(e) {
+                console.warn('自動同步比對失敗：', e);
+            }
         }
 
 
