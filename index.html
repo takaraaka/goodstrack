@@ -3475,7 +3475,98 @@
             }
         }
 
-        // 🎯 3. 自動背景比對防爆處理
+        // 1. 雲端數據拆解與套用 (包裹 try-catch 防爆)
+        function applyCloudData(cloudData) {
+            if (!cloudData) return;
+            
+            if (cloudData.headerTitle) {
+                headerTitle = cloudData.headerTitle;
+                document.getElementById('main-header').innerText = headerTitle;
+                document.getElementById('custom-header-title').value = headerTitle;
+                try { localStorage.setItem('goodsTrackerHeaderTitle', headerTitle); } catch(e){}
+            }
+
+            if (cloudData.globalRate) {
+                globalRate = cloudData.globalRate;
+                const rateInput = document.getElementById('global-rate');
+                if (rateInput) rateInput.value = globalRate;
+                try { localStorage.setItem('goodsTrackerRate', globalRate); } catch(e){}
+            }
+
+            if (cloudData.ipCategories && Array.isArray(cloudData.ipCategories)) {
+                ipCategories = cloudData.ipCategories;
+                try { localStorage.setItem('goodsTrackerIPs', JSON.stringify(ipCategories)); } catch(e){}
+            }
+
+            if (cloudData.platformSettings && Array.isArray(cloudData.platformSettings)) {
+                platformSettings = cloudData.platformSettings;
+                try { localStorage.setItem('goodsTrackerPlatforms', JSON.stringify(platformSettings)); } catch(e){}
+            }
+
+            if (cloudData.goodsList && Array.isArray(cloudData.goodsList)) {
+                goodsList = cloudData.goodsList;
+                try { 
+                    localStorage.setItem('goodsTrackerData', JSON.stringify(goodsList)); 
+                } catch(e) {
+                    console.warn('⚠️ 手機暫存已滿，直接使用記憶體渲染雲端數據');
+                }
+            }
+
+            calculateConvertedPrice();
+            renderSettingsManager();
+            renderFormPlatforms();
+            renderFormIPs();
+            render();
+        }
+
+        // 2. 儲存時優先推送雲端
+        function saveData() {
+            pushToCloud();
+
+            try { 
+                localStorage.setItem('goodsTrackerData', JSON.stringify(goodsList)); 
+            } catch(e) {
+                console.warn('⚠️ 本地暫存已滿，數據已安全寫入 Supabase');
+            }
+
+            render();
+        }
+
+        // 3. 手動按「🔄 同步」
+        async function connectCloudSync() {
+            const keyInput = document.getElementById('supabase-secret-key').value.trim();
+            if (!keyInput) return alert('請先輸入暗號！');
+
+            userSecretKey = keyInput;
+            try { localStorage.setItem('goodsTrackerSecretKey', userSecretKey); } catch(e){}
+
+            try {
+                const { data, error } = await supabaseClient
+                    .from('user_data')
+                    .select('data_json, updated_at')
+                    .eq('secret_key', userSecretKey)
+                    .single();
+
+                if (error && error.code !== 'PGRST116') {
+                    alert('⚠️ 連線雲端失敗：' + error.message);
+                    return;
+                }
+
+                if (data && data.data_json) {
+                    applyCloudData(data.data_json);
+                    lastSyncTime = new Date(data.updated_at).getTime();
+                    try { localStorage.setItem('goodsTrackerLastSyncTime', lastSyncTime); } catch(e){}
+                    alert('✨ 已成功連結暗號，並為你載入雲端最新數據！');
+                } else {
+                    await pushToCloud();
+                    alert('✨ 專屬暗號已建立，已將目前資料備份至雲端！');
+                }
+            } catch (err) {
+                alert('⚠️ 同步發生錯誤：' + err.message);
+            }
+        }
+
+        // 4. 開網頁自動背景同步
         async function autoCheckAndSync() {
             if (!userSecretKey) return;
             try {
@@ -3490,11 +3581,7 @@
                     if (cloudTime > lastSyncTime) {
                         applyCloudData(data.data_json);
                         lastSyncTime = cloudTime;
-                        try {
-                            localStorage.setItem('goodsTrackerLastSyncTime', lastSyncTime);
-                            localStorage.setItem('goodsTrackerData', JSON.stringify(goodsList));
-                        } catch(e){}
-                        render();
+                        try { localStorage.setItem('goodsTrackerLastSyncTime', lastSyncTime); } catch(e){}
                     }
                 }
             } catch(e) {}
