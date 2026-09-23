@@ -3427,18 +3427,55 @@
 
 
 
+        // 🎯 1. 優先寫入雲端，手機本地滿咗自動 Ignore，絕唔卡死
         function saveData() {
-            // 🎯 1. 優先推送至 Supabase 雲端 (容量無限，最安全)
-            pushToCloud();
+            pushToCloud(); // 優先送去 Supabase 雲端 (容量無限)
 
-            // 🎯 2. 嘗試寫入手機本地 localStorage (滿了就自動忽略，不報錯)
             try { 
                 localStorage.setItem('goodsTrackerData', JSON.stringify(goodsList)); 
             } catch(e) {
-                console.warn('⚠️ 手機本地暫存已滿，資料已安全儲存於 Supabase 雲端！');
+                console.warn('⚠️ 手機本地空間已滿，資料已安全寫入 Supabase 雲端');
             }
 
             render();
+        }
+
+        // 🎯 2. 修正連線/同步：加上 try-catch 確保手機點擊必有反應
+        async function connectCloudSync() {
+            const keyInput = document.getElementById('supabase-secret-key').value.trim();
+            if (!keyInput) return alert('請先輸入暗號！');
+
+            userSecretKey = keyInput;
+            try {
+                localStorage.setItem('goodsTrackerSecretKey', userSecretKey);
+            } catch(e) {}
+
+            try {
+                // 向 Supabase 撈取雲端資料
+                const { data, error } = await supabaseClient
+                    .from('user_data')
+                    .select('data_json, updated_at')
+                    .eq('secret_key', userSecretKey)
+                    .single();
+
+                if (error && error.code !== 'PGRST116') {
+                    alert('⚠️ 連線雲端失敗：' + error.message);
+                    return;
+                }
+
+                if (data && data.data_json) {
+                    applyCloudData(data.data_json);
+                    lastSyncTime = new Date(data.updated_at).getTime();
+                    try { localStorage.setItem('goodsTrackerLastSyncTime', lastSyncTime); } catch(e){}
+                    render();
+                    alert('✨ 已成功連結暗號，並為你載入雲端最新數據！');
+                } else {
+                    await pushToCloud();
+                    alert('✨ 專屬暗號已建立，已將目前資料備份至雲端！');
+                }
+            } catch (err) {
+                alert('⚠️ 同步發生錯誤：' + err.message);
+            }
         }
 
 
@@ -4389,35 +4426,6 @@
                     localStorage.setItem('goodsTrackerLastSyncTime', lastSyncTime);
                 }
             } catch (err) { console.error('同步雲端失敗:', err); }
-        }
-
-        // 🎯 點擊「連結/同步」按鈕 (安全版：只讀取雲端，防止誤覆蓋)
-        async function connectCloudSync() {
-            const keyInput = document.getElementById('supabase-secret-key').value.trim();
-            if (!keyInput) return alert('請輸入暗號！');
-
-            userSecretKey = keyInput;
-            localStorage.setItem('goodsTrackerSecretKey', userSecretKey);
-
-            // 嘗試撈取雲端
-            const { data, error } = await supabaseClient
-                .from('user_data')
-                .select('data_json, updated_at')
-                .eq('secret_key', userSecretKey)
-                .single();
-
-            if (data && data.data_json) {
-                // 🛡️ 安全邏輯：只要雲端有紀錄，直接無腦載入！完全不給「誤觸覆蓋」的機會
-                applyCloudData(data.data_json);
-                lastSyncTime = new Date(data.updated_at).getTime();
-                localStorage.setItem('goodsTrackerLastSyncTime', lastSyncTime);
-                render();
-                alert('✨ 已成功連結暗號，並為你載入雲端最新數據！');
-            } else {
-                // 如果是全新的暗號（雲端完全沒紀錄），才把目前的資料上傳
-                await pushToCloud();
-                alert('✨ 專屬暗號已建立，已將目前資料備份至雲端！');
-            }
         }
 
         
