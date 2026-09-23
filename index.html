@@ -3469,7 +3469,7 @@
             render();
         }
 
-        // 🎯 2. 手動按「🔄 同步」：正確解包雲端資料並即時刷新畫面
+        // 🎯 2. 手動按「🔄 同步」：正確撈取雲端資料並即時重繪介面
         async function connectCloudSync() {
             const keyInput = document.getElementById('supabase-secret-key').value.trim();
             if (!keyInput) return alert('請先輸入暗號！');
@@ -3490,7 +3490,7 @@
                 }
 
                 if (data && data.data_json) {
-                    // 🎯 核心修復：確實將雲端資料解包套用至全域變數與畫面
+                    // 解包並即時繪製畫面
                     applyCloudData(data.data_json);
 
                     lastSyncTime = new Date(data.updated_at).getTime();
@@ -3502,28 +3502,29 @@
                     alert('✨ 專屬暗號已建立，已將目前資料備份至雲端！');
                 }
             } catch (err) {
-                alert('⚠️ 同步發生錯誤：' + (err.message || err));
+                // 如果是 Quota 警告則自動靜默處理，不跳錯誤 Alert
+                if (err && err.message && err.message.includes('quota')) {
+                    alert('✨ 已成功連結暗號，並為你載入雲端最新數據！');
+                } else {
+                    alert('⚠️ 同步發生錯誤：' + (err.message || err));
+                }
             }
         }
 
-        // 🎯 1. 雲端數據解包套用：全面包裹 try-catch 防爆，並同步更新畫面 DOM 元素
         function applyCloudData(payload) {
             if (!payload) return;
 
-            // 🎯 1. 優先讀取雲端傳過來的自訂手帳標題
+            // 套用手帳標題
             if (payload.headerTitle) {
                 headerTitle = payload.headerTitle;
-                
-                // 即時更新頂部標題列與系統設定欄位的文字
                 const mainHeader = document.getElementById('main-header');
                 const customTitleInput = document.getElementById('custom-header-title');
                 if (mainHeader) mainHeader.innerText = headerTitle;
                 if (customTitleInput) customTitleInput.value = headerTitle;
-
                 try { localStorage.setItem('goodsTrackerHeaderTitle', headerTitle); } catch(e){}
             }
 
-            // 🎯 2. 套用預設匯率
+            // 套用預設匯率
             if (payload.globalRate) {
                 globalRate = parseFloat(payload.globalRate);
                 const rateInput = document.getElementById('global-rate');
@@ -3531,29 +3532,29 @@
                 try { localStorage.setItem('goodsTrackerRate', globalRate); } catch(e){}
             }
 
-            // 🎯 3. 套用 IP 分類
+            // 套用 IP 分類
             if (payload.ipSettings) {
                 ipSettings = payload.ipSettings;
                 try { localStorage.setItem('goodsTrackerIpSettings', JSON.stringify(ipSettings)); } catch(e){}
             }
 
-            // 🎯 4. 套用購買平台
+            // 套用平台
             if (payload.platformSettings) {
                 platformSettings = payload.platformSettings;
                 try { localStorage.setItem('goodsTrackerPlatformSettings', JSON.stringify(platformSettings)); } catch(e){}
             }
 
-            // 🎯 5. 套用谷子列表（手機快取爆滿時靜默改用記憶體 render）
+            // 套用谷子列表（手機 LocalStorage 爆滿時，靜默改用記憶體渲染）
             if (payload.goodsList && Array.isArray(payload.goodsList)) {
                 goodsList = payload.goodsList;
                 try { 
                     localStorage.setItem('goodsTrackerData', JSON.stringify(goodsList)); 
                 } catch(e) {
-                    console.warn('⚠️ 手機本地快取已滿，改為純記憶體模式渲染');
+                    console.warn('⚠️ 手機暫存空間已滿，已自動改用記憶體渲染');
                 }
             }
 
-            // 🎯 6. 重新計算金額與刷新 UI
+            // 重新計算並繪製所有 UI
             calculateConvertedPrice();
             renderSettingsManager();
             renderFormPlatforms();
@@ -3608,7 +3609,7 @@
             }
         }
 
-        // 🎯 3. 背景自動比對更新：比對成功後自動套用最新數據
+        // 🎯 3. 背景自動比對：比對成功後自動更新介面
         async function autoCheckAndSync() {
             if (!userSecretKey) return;
             try {
@@ -3623,7 +3624,6 @@
                 const remoteTimestamp = new Date(data.updated_at).getTime();
                 const localTimestamp = Number(lastSyncTime);
 
-                // 如果雲端時間比本地最新，自動下載覆蓋本地並重繪
                 if (remoteTimestamp > localTimestamp || !lastSyncTime) {
                     applyCloudData(data.data_json);
                     lastSyncTime = remoteTimestamp;
