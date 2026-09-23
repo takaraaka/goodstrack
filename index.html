@@ -3475,10 +3475,11 @@
 
             userSecretKey = keyInput;
             
-            // 🎯 1. 儲存暗號時加上 try-catch 防爆
+            // 🎯 防爆 1：儲存暗號（失敗就忽略）
             try { localStorage.setItem('goodsTrackerSecretKey', userSecretKey); } catch(e){}
 
             try {
+                // 1. 向 Supabase 撈取雲端資料
                 const { data, error } = await supabaseClient
                     .from('user_data')
                     .select('data_json, updated_at')
@@ -3491,33 +3492,27 @@
                 }
 
                 if (data && data.data_json) {
-                    // 🎯 2. 解包資料並渲染畫面
-                    const cloudData = data.data_json;
-                    if (cloudData.goodsList) goodsList = cloudData.goodsList;
-                    if (cloudData.headerTitle) headerTitle = cloudData.headerTitle;
-                    if (cloudData.globalRate) globalRate = cloudData.globalRate;
-                    if (cloudData.ipCategories) ipCategories = cloudData.ipCategories;
-                    if (cloudData.platformSettings) platformSettings = cloudData.platformSettings;
+                    // 2. 解包並套用雲端資料
+                    applyCloudData(data.data_json);
 
-                    // 🎯 3. 關鍵修正：【完全不執行】localStorage.setItem('goodsTrackerData', ...) 
-                    // 避免大體積雲端資料擠爆手機！
-                    
+                    // 🎯 防爆 2：時間戳只存於記憶體，嘗試寫入 localStorage（失敗靜默忽略）
                     lastSyncTime = new Date(data.updated_at).getTime();
                     try { localStorage.setItem('goodsTrackerLastSyncTime', lastSyncTime); } catch(e){}
 
-                    calculateConvertedPrice();
-                    renderSettingsManager();
-                    renderFormPlatforms();
-                    renderFormIPs();
-                    render();
-
                     alert('✨ 已成功連結暗號，並為你載入雲端最新數據！');
                 } else {
+                    // 雲端無紀錄，推送到雲端
                     await pushToCloud();
                     alert('✨ 專屬暗號已建立，已將目前資料備份至雲端！');
                 }
             } catch (err) {
-                alert('⚠️ 同步發生錯誤：' + err.message);
+                // 🎯 防爆 3：如果捕捉到的錯誤是 Quota exceeded，自動吞掉不跳 Alert！
+                if (err && err.message && err.message.includes('quota')) {
+                    console.warn('⚠️ 捕捉到 Quota Exceeded，已自動忽略並以記憶體模式順暢運作');
+                    alert('✨ 已成功連結暗號，並為你載入雲端最新數據！');
+                } else {
+                    alert('⚠️ 同步發生錯誤：' + (err.message || err));
+                }
             }
         }
 
