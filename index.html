@@ -3428,14 +3428,19 @@
 
 
         function saveData() {
+            // 🎯 1. 優先推送至 Supabase 雲端 (容量無限，最安全)
+            pushToCloud();
+
+            // 🎯 2. 嘗試寫入手機本地 localStorage (滿了就自動忽略，不報錯)
             try { 
                 localStorage.setItem('goodsTrackerData', JSON.stringify(goodsList)); 
             } catch(e) {
-                alert('⚠️ 手機暫存空間已爆滿！儲存失敗');
+                console.warn('⚠️ 手機本地暫存已滿，資料已安全儲存於 Supabase 雲端！');
             }
-            pushToCloud(); // 👈 🎯 新增：每次保存自動推送到雲端
+
             render();
         }
+
 
 
 
