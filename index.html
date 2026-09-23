@@ -3469,7 +3469,7 @@
             render();
         }
 
-        // 🎯 手動按「🔄 同步」時：強制更新介面
+        // 🎯 2. 手動按「🔄 同步」：正確解包雲端資料並即時刷新畫面
         async function connectCloudSync() {
             const keyInput = document.getElementById('supabase-secret-key').value.trim();
             if (!keyInput) return alert('請先輸入暗號！');
@@ -3490,18 +3490,11 @@
                 }
 
                 if (data && data.data_json) {
-                    // 套用雲端資料
+                    // 🎯 核心修復：確實將雲端資料解包套用至全域變數與畫面
                     applyCloudData(data.data_json);
-                    
-                    // 🎯 關鍵：更新最後同步時間，並即時重新渲染畫面！
+
                     lastSyncTime = new Date(data.updated_at).getTime();
                     try { localStorage.setItem('goodsTrackerLastSyncTime', lastSyncTime); } catch(e){}
-
-                    // 強制重繪所有 UI 視元
-                    renderSettingsManager();
-                    renderFormPlatforms();
-                    renderFormIPs();
-                    render(); // 👈 重新畫出谷子列表
 
                     alert('✨ 已成功連結暗號，並為你載入雲端最新數據！');
                 } else {
@@ -3509,66 +3502,59 @@
                     alert('✨ 專屬暗號已建立，已將目前資料備份至雲端！');
                 }
             } catch (err) {
-                // 如果是 Quota 警告則靜默處理，不跳錯誤 Alert
-                if (err && err.message && err.message.includes('quota')) {
-                    alert('✨ 已成功連結暗號，並為你載入雲端最新數據！');
-                } else {
-                    alert('⚠️ 同步發生錯誤：' + (err.message || err));
-                }
+                alert('⚠️ 同步發生錯誤：' + (err.message || err));
             }
         }
 
-        function applyCloudData(cloudData) {
-            if (!cloudData) return;
-            
-            // 🎯 1. 套用手帳名（加上 try-catch 防爆，並直接更新畫面元素）
-            if (cloudData.headerTitle) {
-                headerTitle = cloudData.headerTitle;
-                
-                // 即時更新頂部標題與設定框文字
+        // 🎯 1. 雲端數據解包套用：全面包裹 try-catch 防爆，並同步更新畫面 DOM 元素
+        function applyCloudData(payload) {
+            if (!payload) return;
+
+            // 套用手帳標題
+            if (payload.headerTitle) {
+                headerTitle = payload.headerTitle;
                 const mainHeader = document.getElementById('main-header');
                 const customTitleInput = document.getElementById('custom-header-title');
                 if (mainHeader) mainHeader.innerText = headerTitle;
                 if (customTitleInput) customTitleInput.value = headerTitle;
-
                 try { localStorage.setItem('goodsTrackerHeaderTitle', headerTitle); } catch(e){}
             }
 
-            // 🎯 2. 套用預設匯率
-            if (cloudData.globalRate) {
-                globalRate = cloudData.globalRate;
+            // 套用匯率
+            if (payload.globalRate) {
+                globalRate = parseFloat(payload.globalRate);
                 const rateInput = document.getElementById('global-rate');
                 if (rateInput) rateInput.value = globalRate;
                 try { localStorage.setItem('goodsTrackerRate', globalRate); } catch(e){}
             }
 
-            // 🎯 3. 套用 IP 分類
-            if (cloudData.ipCategories && Array.isArray(cloudData.ipCategories)) {
-                ipCategories = cloudData.ipCategories;
-                try { localStorage.setItem('goodsTrackerIPs', JSON.stringify(ipCategories)); } catch(e){}
+            // 套用 IP 分類
+            if (payload.ipSettings) {
+                ipSettings = payload.ipSettings;
+                try { localStorage.setItem('goodsTrackerIpSettings', JSON.stringify(ipSettings)); } catch(e){}
             }
 
-            // 🎯 4. 套用購買平台
-            if (cloudData.platformSettings && Array.isArray(cloudData.platformSettings)) {
-                platformSettings = cloudData.platformSettings;
-                try { localStorage.setItem('goodsTrackerPlatforms', JSON.stringify(platformSettings)); } catch(e){}
+            // 套用平台
+            if (payload.platformSettings) {
+                platformSettings = payload.platformSettings;
+                try { localStorage.setItem('goodsTrackerPlatformSettings', JSON.stringify(platformSettings)); } catch(e){}
             }
 
-            // 🎯 5. 套用谷子列表（手機快取滿了就純靠記憶體 render，絕不報錯）
-            if (cloudData.goodsList && Array.isArray(cloudData.goodsList)) {
-                goodsList = cloudData.goodsList;
+            // 套用谷子列表（手機快取滿了就純靠記憶體 render，絕不報錯）
+            if (payload.goodsList && Array.isArray(payload.goodsList)) {
+                goodsList = payload.goodsList;
                 try { 
                     localStorage.setItem('goodsTrackerData', JSON.stringify(goodsList)); 
                 } catch(e) {
-                    console.warn('⚠️ 手機快取已滿，已改為使用記憶體渲染雲端數據');
+                    console.warn('⚠️ 手機本地快取已爆滿，已改為純記憶體模式渲染');
                 }
             }
 
-            // 🎯 6. 重新計算與渲染
+            // 即時重繪所有介面
             calculateConvertedPrice();
             renderSettingsManager();
             renderFormPlatforms();
-            renderFormIPs();
+            renderFormIpTags();
             render();
         }
 
@@ -3619,35 +3605,28 @@
             }
         }
 
-        // 🎯 背景自動比對並更新
+        // 🎯 3. 背景自動比對更新：比對成功後自動套用最新數據
         async function autoCheckAndSync() {
             if (!userSecretKey) return;
             try {
                 const { data, error } = await supabaseClient
                     .from('user_data')
-                    .select('data_json, updated_at')
+                    .select('updated_at, data_json')
                     .eq('secret_key', userSecretKey)
                     .single();
 
-                if (data && data.data_json) {
-                    const cloudTime = new Date(data.updated_at).getTime();
-                    
-                    // 如果雲端時間比本地新，或是第一次載入，立刻套用並重繪！
-                    if (cloudTime > lastSyncTime || !lastSyncTime) {
-                        applyCloudData(data.data_json);
-                        lastSyncTime = cloudTime;
-                        try { localStorage.setItem('goodsTrackerLastSyncTime', lastSyncTime); } catch(e){}
-                        
-                        // 🎯 即時重繪畫面
-                        renderSettingsManager();
-                        renderFormPlatforms();
-                        renderFormIPs();
-                        render();
-                    }
+                if (error || !data) return;
+
+                const remoteTimestamp = new Date(data.updated_at).getTime();
+                const localTimestamp = Number(lastSyncTime);
+
+                // 如果雲端時間比本地最新，自動下載覆蓋本地並重繪
+                if (remoteTimestamp > localTimestamp || !lastSyncTime) {
+                    applyCloudData(data.data_json);
+                    lastSyncTime = remoteTimestamp;
+                    try { localStorage.setItem('goodsTrackerLastSyncTime', lastSyncTime); } catch(e){}
                 }
-            } catch(e) {
-                console.warn('自動同步比對失敗：', e);
-            }
+            } catch (err) { console.error('自動比對失敗:', err); }
         }
 
 
