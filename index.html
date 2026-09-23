@@ -2113,13 +2113,44 @@
 
         }
 
+        /* 🌀 全螢幕 Loading 遮罩 */
+        #loading-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(250, 246, 247, 0.92);
+            backdrop-filter: blur(4px);
+            z-index: 99999;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 0.3s ease;
+        }
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid var(--border-color);
+            border-top: 4px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-bottom: 12px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
     </style>
 
 </head>
 
 <body>
 
-
+    <!-- 🌀 載入中遮罩 -->
+    <div id="loading-overlay">
+        <div class="spinner"></div>
+        <div style="color: var(--primary-color); font-weight: bold; font-size: 11px;">✏️ Loading...</div>
+    </div>
 
     <header id="main-header">🍡 谷子手帳 Goods Tracker</header>
 
@@ -2736,35 +2767,43 @@
         document.getElementById('global-rate').value = globalRate;
 
         document.addEventListener("DOMContentLoaded", async function() {
+            const loader = document.getElementById('loading-overlay');
+            if (loader) loader.style.display = 'flex'; // 顯示 Loading
+
             document.getElementById('main-header').innerText = headerTitle;
             document.getElementById('custom-header-title').value = headerTitle;
         
             const sortSelect = document.getElementById('sort-select');
             if (sortSelect) sortSelect.value = currentSortMode;
         
-            // 🎯 1. 預設過濾狀態設為 'all'，防止過濾器隱藏物品
             currentStatusFilter = 'all';
             currentIPFilter = 'all';
 
-            // 🎯 2. 先繪製一次基礎 UI (確保 IP Filter 和狀態欄第一時間印出來，不會一片空白)
-            renderSettingsManager();
-            renderFormPlatforms();
-            renderFormIpTags();
-            render();
-
-            // 🎯 3. 如果有暗號，開啟下載鎖並等待 Supabase 最新的資料
+            // 如果有暗號，強制等待雲端資料，期間繼續保持 Loading 畫面
             if (userSecretKey) {
                 const input = document.getElementById('supabase-secret-key');
                 if (input) input.value = userSecretKey;
                 
                 try {
-                    isDownloading = true; // 開鎖：禁止 autoCheckAndSync 期間觸發 PUSH 上傳
+                    isDownloading = true;
                     await autoCheckAndSync();
                 } catch (e) {
                     console.error("雲端同步失敗:", e);
                 } finally {
-                    isDownloading = false; // 解鎖
+                    isDownloading = false;
                 }
+            } else {
+                // 沒有暗號才渲染本地
+                renderSettingsManager();
+                renderFormPlatforms();
+                renderFormIpTags();
+                render();
+            }
+
+            // 數據處理完畢後，隱藏 Loading 遮罩
+            if (loader) {
+                loader.style.opacity = '0';
+                setTimeout(() => { loader.style.display = 'none'; loader.style.opacity = '1'; }, 300);
             }
         });
 
@@ -3329,7 +3368,10 @@
         }
 
         function render() {
-            let totalAll = goodsList.length;
+            // 🎯 1. 重新計算「全部（非完成）」的數量
+            let activeGoods = goodsList.filter(item => item.status !== '完成');
+            let totalAll = activeGoods.length;
+
             let statusCounts = { '待發貨': 0, '待收貨': 0, '已到貨': 0, '完成': 0 };
             let ipCounts = {};
             ipSettings.forEach(ip => ipCounts[ip.id] = 0);
@@ -3337,7 +3379,15 @@
 
             goodsList.forEach(item => {
                 if (statusCounts.hasOwnProperty(item.status)) statusCounts[item.status]++;
-                let matchStatus = currentStatusFilter === 'all' ? true : item.status === currentStatusFilter;
+                
+                // 🎯 2. IP 數量統計：當狀態欄選擇「全部」時，只計算非「完成」狀態的物品
+                let matchStatus = false;
+                if (currentStatusFilter === 'all') {
+                    matchStatus = item.status !== '完成'; // 👈 排除完成
+                } else {
+                    matchStatus = item.status === currentStatusFilter;
+                }
+
                 if (matchStatus) {
                     const itemIps = Array.isArray(item.ip) ? item.ip : [item.ip || 'OTHERS'];
                     itemIps.forEach(ipId => {
@@ -3347,6 +3397,7 @@
                 }
             });
 
+            // 3. 渲染狀態 Tab
             const statusContainer = document.getElementById('status-filters');
             let statusHTML = `<button class="filter-btn ${currentStatusFilter === 'all' ? 'active' : ''}" onclick="filterStatus('all', event)">全部 (${totalAll})</button>`;
             ['待發貨', '待收貨', '已到貨', '完成'].forEach(st => {
@@ -3356,6 +3407,7 @@
             });
             statusContainer.innerHTML = statusHTML;
 
+            // 4. 渲染 IP 圓圈
             const filterContainer = document.getElementById('ip-filters');
             let currentStatusTotal = currentStatusFilter === 'all' ? totalAll : (statusCounts[currentStatusFilter] || 0);
             let ipHTML = `
@@ -3419,8 +3471,9 @@
             const container = document.getElementById('goods-container'); 
             container.innerHTML = '';
 
+            // 🎯 5. 核心過濾邏輯修改：當 currentStatusFilter === 'all' 時，自動排除 '完成' 狀態！
             let filteredList = goodsList.filter(item => {
-                let statusMatch = currentStatusFilter === 'all' ? true : item.status === currentStatusFilter;
+                let statusMatch = currentStatusFilter === 'all' ? (item.status !== '完成') : (item.status === currentStatusFilter);
                 let ipMatch = currentIPFilter === 'all' ? true : (Array.isArray(item.ip) ? item.ip.includes(currentIPFilter) : item.ip === currentIPFilter);
                 let balanceMatch = true;
                 if (isBalanceFilterActive) {
@@ -3428,6 +3481,7 @@
                 }
                 return statusMatch && ipMatch && balanceMatch;
             });
+
 
             filteredList.sort((a, b) => {
                 if (currentSortMode.startsWith('arrived')) {
