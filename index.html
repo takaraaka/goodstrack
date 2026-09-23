@@ -3469,12 +3469,13 @@
             render();
         }
 
-        // 🎯 2. 同步函式防爆處理
         async function connectCloudSync() {
             const keyInput = document.getElementById('supabase-secret-key').value.trim();
             if (!keyInput) return alert('請先輸入暗號！');
 
             userSecretKey = keyInput;
+            
+            // 🎯 1. 儲存暗號時加上 try-catch 防爆
             try { localStorage.setItem('goodsTrackerSecretKey', userSecretKey); } catch(e){}
 
             try {
@@ -3490,10 +3491,26 @@
                 }
 
                 if (data && data.data_json) {
-                    applyCloudData(data.data_json);
+                    // 🎯 2. 解包資料並渲染畫面
+                    const cloudData = data.data_json;
+                    if (cloudData.goodsList) goodsList = cloudData.goodsList;
+                    if (cloudData.headerTitle) headerTitle = cloudData.headerTitle;
+                    if (cloudData.globalRate) globalRate = cloudData.globalRate;
+                    if (cloudData.ipCategories) ipCategories = cloudData.ipCategories;
+                    if (cloudData.platformSettings) platformSettings = cloudData.platformSettings;
+
+                    // 🎯 3. 關鍵修正：【完全不執行】localStorage.setItem('goodsTrackerData', ...) 
+                    // 避免大體積雲端資料擠爆手機！
+                    
                     lastSyncTime = new Date(data.updated_at).getTime();
                     try { localStorage.setItem('goodsTrackerLastSyncTime', lastSyncTime); } catch(e){}
+
+                    calculateConvertedPrice();
+                    renderSettingsManager();
+                    renderFormPlatforms();
+                    renderFormIPs();
                     render();
+
                     alert('✨ 已成功連結暗號，並為你載入雲端最新數據！');
                 } else {
                     await pushToCloud();
