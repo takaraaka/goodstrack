@@ -2668,6 +2668,7 @@
 
         let userSecretKey = localStorage.getItem('goodsTrackerSecretKey') || '';
         let lastSyncTime = localStorage.getItem('goodsTrackerLastSyncTime') || 0;
+        let isDownloading = false; // 👈 🎯 新增：防止下載未完成時自動 PUSH 覆蓋雲端
 
         const defaultIpSettings = [
             { id: "IP1", name: "IP1", color: "#ffe3e8", textColor: "#d85c80", pic: "" },
@@ -2734,19 +2735,29 @@
 
         document.getElementById('global-rate').value = globalRate;
 
-        document.addEventListener("DOMContentLoaded", function() {
+        document.addEventListener("DOMContentLoaded", async function() {
             document.getElementById('main-header').innerText = headerTitle;
             document.getElementById('custom-header-title').value = headerTitle;
 
             const sortSelect = document.getElementById('sort-select');
             if (sortSelect) sortSelect.value = currentSortMode;
 
+            // 🎯 關鍵修復：如果有暗號，必須先等待雲端拉取（Pull）完畢！
             if (userSecretKey) {
                 const input = document.getElementById('supabase-secret-key');
                 if (input) input.value = userSecretKey;
-                autoCheckAndSync();
+                
+                try {
+                    isDownloading = true; // 開啟下載鎖，禁止 pushToCloud 運作
+                    await autoCheckAndSync(); // 確保雲端最新資料下載完成
+                } catch (e) {
+                    console.error("雲端同步失敗，降級使用本地快取:", e);
+                } finally {
+                    isDownloading = false; // 下載完成，解鎖
+                }
             }
 
+            // 雲端資料下載並更新 localStorage 後，才進行渲染
             renderSettingsManager();
             currentStatusFilter = '待發貨';
             render(); 
@@ -3202,6 +3213,11 @@
 
         // 🎯 推送本地最新資料到雲端
         async function pushToCloud() {
+            // 🎯 關鍵修復：如果正在從雲端下載資料，或者沒有暗號，絕對不自動上傳覆蓋！
+            if (isDownloading || !userSecretKey) {
+                return;
+            }
+
             if (!userSecretKey) return;
             const payload = { goodsList, globalRate, ipSettings, platformSettings, headerTitle };
             const nowIso = new Date().toISOString();
