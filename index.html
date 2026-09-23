@@ -112,14 +112,11 @@
 
 
 
+        /* 建議補充 fallback 寫法 */
         body.modal-open {
-
-            /* 🎯 完美替代 position: fixed 的現代抗滾動方案，徹底解決 iOS 鍵盤彈出時點不到輸入框的惡性 Bug */
-
             overflow: hidden !important;
-
+            height: 100vh !important;
             height: 100dvh !important;
-
         }
 
 
@@ -2641,8 +2638,7 @@
 
 
     <script>
-
-        // 🛡️ 終極防爆安全盾：覆蓋原生的 setItem，手機本地滿了就靜默忽略，絕不彈出 Quota Exceeded Alert！
+        // 🛡️ 1. 全局防爆安全盾：攔截所有超額 LocalStorage 寫入，手機快取滿時改用記憶體運作
         (function() {
             const originalSetItem = localStorage.setItem.bind(localStorage);
             localStorage.setItem = function(key, value) {
@@ -2654,20 +2650,20 @@
             };
         })();
 
-        // 🧹 徹底清空手機本地 LocalStorage 暫存
+        // 🧹 清空手機本地快取
         function forceClearLocalStorage() {
-            if (confirm("⚠️ 確定要徹底清空手機本地快取嗎？\n\n這會釋放手機 5MB 空間，不會刪除 Supabase 雲端資料。")) {
+            if (confirm("⚠️ 確定要徹底清空手機本地快取嗎？\n\n這會釋放手機空間，不會刪除 Supabase 雲端資料。")) {
                 try {
                     localStorage.clear();
                     alert("✨ 手機本地快取已徹底清空！請重新輸入暗號同步雲端。");
-                    location.reload(); // 重新載入頁面
+                    location.reload();
                 } catch (e) {
                     alert("清理失敗：" + e.message);
                 }
             }
         }
 
-      // 🌐 Supabase 雲端設定
+        // 🌐 Supabase 雲端連線設定
         const SUPABASE_URL = "https://knmqsvsnccftshmcijxk.supabase.co";
         const SUPABASE_KEY = "sb_publishable_c_2lOi4u_oEXGz-aY6Bcvw_u-ZAo-fD";
         const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -2676,134 +2672,69 @@
         let lastSyncTime = localStorage.getItem('goodsTrackerLastSyncTime') || 0;
 
         const defaultIpSettings = [
-
             { id: "IP1", name: "IP1", color: "#ffe3e8", textColor: "#d85c80", pic: "" },
-
             { id: "IP2", name: "IP2", color: "#e3f0ff", textColor: "#3b7ec4", pic: "" },
-
             { id: "IP3", name: "IP3", color: "#fef1cf", textColor: "#9e7715", pic: "" },
-
             { id: "OTHERS", name: "其他", color: "#ecebeb", textColor: "#5c5556", pic: "" }
-
         ];
-
-
 
         const defaultPlatformSettings = [
-
             { id: "淘寶", name: "淘寶", pic: "" },
-
             { id: "閒魚", name: "閒魚", pic: "" },
-
             { id: "小紅書", name: "小紅書", pic: "" },
-
             { id: "官網", name: "官網", pic: "" },
-
             { id: "拼團", name: "拼團", pic: "" },
-
             { id: "其他", name: "其他", pic: "" }
-
         ];
-
-
 
         const defaultData = [
-
             { item: "Item 1", ip: ["IP1"], status: "待發貨", date: "2026-06-01", arrived: "2026年7月", paid: 100, currency: "HKD", balance: 180, balanceCurrency: "RMB", fullpaid: false, platform: "小紅書", pic: "", remarks: "" }
-
         ];
 
-
-
         let goodsList;
-
         let globalRate;
-
         let ipSettings;
-
         let platformSettings;
-
         let headerTitle;
-
         let currentSortMode;
 
         try {
-
             goodsList = JSON.parse(localStorage.getItem('goodsTrackerData')) || defaultData;
-
             globalRate = parseFloat(localStorage.getItem('goodsTrackerRate')) || 1.16;
-
             ipSettings = JSON.parse(localStorage.getItem('goodsTrackerIpSettings')) || defaultIpSettings;
-
             
-
             let savedPlats = localStorage.getItem('goodsTrackerPlatformSettings');
-
             if (savedPlats) {
-
                 let parsed = JSON.parse(savedPlats);
-
                 if (parsed.length > 0 && typeof parsed[0] === 'string') {
-
                     platformSettings = parsed.map(p => ({ id: p, name: p, pic: "" }));
-
                 } else {
-
                     platformSettings = parsed;
-
                 }
-
             } else {
-
                 platformSettings = defaultPlatformSettings;
-
             }
 
-
-
             headerTitle = localStorage.getItem('goodsTrackerHeaderTitle') || "🍡 谷子手帳 Goods Tracker";
-
             currentSortMode = localStorage.getItem('goodsTrackerSortMode') || 'arrived_desc'; 
-
         } catch (e) {
-
             goodsList = defaultData; globalRate = 1.16; ipSettings = defaultIpSettings; platformSettings = defaultPlatformSettings; headerTitle = "🍡 谷子手帳 Goods Tracker"; currentSortMode = 'arrived_desc';
-
         }
 
-
-
-        // 統一在此處處理歷史數據升級轉名
-
         goodsList.forEach(item => {
-
             if (item.status === '已出貨' || item.status === '出貨') item.status = '待收貨';
-
             if (item.status === '已到貨' || item.status === '到貨') item.status = '已到貨';
-
             if (item.status === '待出貨') item.status = '待發貨';
-
             if (typeof item.ip === 'string') item.ip = [item.ip];
-
             if (!item.ip) item.ip = ["OTHERS"];
-
         });
 
-
-
         let selectedFormIPs = [];
-
         let currentStatusFilter = 'all'; 
-
         let currentIPFilter = 'all';
-
-        let isBalanceFilterActive = false; // 🎯 紀錄是否開啟「只睇有尾款」Filter
-
-
+        let isBalanceFilterActive = false;
 
         document.getElementById('global-rate').value = globalRate;
-
-
 
         document.addEventListener("DOMContentLoaded", function() {
             document.getElementById('main-header').innerText = headerTitle;
@@ -2812,289 +2743,156 @@
             const sortSelect = document.getElementById('sort-select');
             if (sortSelect) sortSelect.value = currentSortMode;
 
-            // 🎯 填入舊有暗號
             if (userSecretKey) {
                 const input = document.getElementById('supabase-secret-key');
                 if (input) input.value = userSecretKey;
-                autoCheckAndSync(); // ⚡ 開網頁自動無感比對雲端
+                autoCheckAndSync();
             }
 
             renderSettingsManager();
-
-            // 一開 App 即時切換至「待發貨」頁面
             currentStatusFilter = '待發貨';
-            
             render(); 
         });
-
-
 
         function updateGlobalRate() {
             const inputVal = parseFloat(document.getElementById('global-rate').value);
             if (!isNaN(inputVal) && inputVal > 0) {
                 globalRate = inputVal;
-                try { 
-                    localStorage.setItem('goodsTrackerRate', globalRate); 
-                } catch(e){}
-                
+                try { localStorage.setItem('goodsTrackerRate', globalRate); } catch(e){}
                 calculateConvertedPrice(); 
                 render();
-                
-                // 🎯 關鍵修正：修改匯率時，立即同步推送到 Supabase 雲端！
                 pushToCloud(); 
             }
         }
 
-
-
         function updateHeaderTitle() {
-
             const newTitle = document.getElementById('custom-header-title').value.trim();
-
             if (!newTitle) return alert('請輸入手帳標題！');
-
             headerTitle = newTitle;
-
             document.getElementById('main-header').innerText = headerTitle;
-
-            try { localStorage.setItem('goodsTrackerHeaderTitle', headerTitle); alert('手帳標題已成功儲存！'); } catch(e){}
-
+            try { localStorage.setItem('goodsTrackerHeaderTitle', headerTitle); } catch(e){}
+            alert('手帳標題已成功儲存！');
+            pushToCloud();
         }
 
-        // 🎯 點擊「尾款」卡片切換篩選狀態
         function toggleBalanceFilter() {
             isBalanceFilterActive = !isBalanceFilterActive;
             render();
         }
 
-
-
         function toggleSystemSettings() {
-
             resetSettingsForm();
-
             const panel = document.getElementById('system-settings-panel');
-
             const rateContainer = document.getElementById('rate-container');
-
             const rateWrapper = document.getElementById('rate-setting-wrapper');
-
             panel.classList.toggle('active');
-
             if (panel.classList.contains('active')) {
-
                 rateContainer.classList.add('hide-rate');
-
                 rateWrapper.classList.add('settings-active');
-
             } else {
-
                 rateContainer.classList.remove('hide-rate');
-
                 rateWrapper.classList.remove('settings-active');
-
             }
-
         }
-
-
 
         function getContrastYIQ(hexcolor){
-
             hexcolor = hexcolor.replace("#", "");
-
             var r = parseInt(hexcolor.substr(0,2),16), g = parseInt(hexcolor.substr(2,2),16), b = parseInt(hexcolor.substr(4,2),16);
-
             return (((r*299)+(g*587)+(b*114))/1000 >= 128) ? '#4a3e41' : '#ffffff';
-
         }
-
-
 
         function compressImage(base64Str, maxWidth = 500, quality = 0.7) {
-
             return new Promise((resolve) => {
-
                 if (!base64Str || !base64Str.startsWith('data:image')) {
-
                     resolve(base64Str);
-
                     return;
-
                 }
-
                 const img = new Image();
-
                 img.onload = function() {
-
                     let width = img.width;
-
                     let height = img.height;
-
                     if (width > maxWidth) {
-
                         height = Math.round((height * maxWidth) / width);
-
                         width = maxWidth;
-
                     }
-
                     const canvas = document.createElement('canvas');
-
                     canvas.width = width; canvas.height = height;
-
                     const ctx = canvas.getContext('2d');
-
                     ctx.drawImage(img, 0, 0, width, height);
-
                     const compressedBase64 = canvas.toDataURL('image/jpeg', quality);
-
                     resolve(compressedBase64);
-
                 };
-
                 img.onerror = function() { resolve(base64Str); };
-
                 img.src = base64Str;
-
             });
-
         }
-
-
 
         function handleIpIconUpload(event) {
-
             const file = event.target.files[0]; if (!file) return;
-
             const reader = new FileReader();
-
             reader.onload = function(e) {
-
                 compressImage(e.target.result, 100, 0.7).then(compressed => {
-
                     document.getElementById('new-ip-pic').value = compressed;
-
                     document.getElementById('new-ip-icon-preview').src = compressed;
-
                     document.getElementById('new-ip-icon-preview').style.display = 'block';
-
                     document.getElementById('new-ip-icon-placeholder').style.display = 'none';
-
                     document.getElementById('ip-icon-clear-btn').style.display = 'inline-block';
-
                 });
-
             };
-
             reader.readAsDataURL(file);
-
         }
-
-
 
         function clearIpIconUpload() {
-
             document.getElementById('new-ip-pic').value = '';
-
             document.getElementById('new-ip-file').value = '';
-
             document.getElementById('new-ip-icon-preview').style.display = 'none';
-
             document.getElementById('new-ip-icon-placeholder').style.display = 'block';
-
             document.getElementById('ip-icon-clear-btn').style.display = 'none';
-
         }
-
-
 
         function handlePlatformIconUpload(event) {
-
             const file = event.target.files[0]; if (!file) return;
-
             const reader = new FileReader();
-
             reader.onload = function(e) {
-
                 compressImage(e.target.result, 100, 0.7).then(compressed => {
-
                     document.getElementById('new-platform-pic').value = compressed;
-
                     document.getElementById('new-platform-icon-preview').src = compressed;
-
                     document.getElementById('new-platform-icon-preview').style.display = 'block';
-
                     document.getElementById('new-platform-icon-placeholder').style.display = 'none';
-
                     document.getElementById('platform-icon-clear-btn').style.display = 'inline-block';
-
                 });
-
             };
-
             reader.readAsDataURL(file);
-
         }
-
-
 
         function clearPlatformIconUpload() {
-
             document.getElementById('new-platform-pic').value = '';
-
             document.getElementById('new-platform-file').value = '';
-
             document.getElementById('new-platform-icon-preview').style.display = 'none';
-
             document.getElementById('new-platform-icon-placeholder').style.display = 'block';
-
             document.getElementById('platform-icon-clear-btn').style.display = 'none';
-
         }
 
-
-
         function renderSettingsManager() {
-
             const ipContainer = document.getElementById('ip-manager-list'); ipContainer.innerHTML = '';
-
             ipSettings.forEach(ip => {
-
                 const iconTag = ip.pic ? `<img src="${ip.pic}" class="square-badge-icon">` : '';
-
                 ipContainer.innerHTML += `
-
                     <div class="settings-item">
-
                         <div style="display:flex; align-items:center; gap:8px;">
-
                             <span class="ip-badge" style="background-color: ${ip.color}; color: ${ip.textColor || getContrastYIQ(ip.color)};">${iconTag}${ip.name || '(純Icon)'}</span>
-
                             <input type="color" value="${ip.color}" onchange="updateIpColor('${ip.id}', this.value)" style="border:none; width:22px; height:22px; cursor:pointer; background:none;">
-
                         </div>
-
                         <div>
-
                             <button class="action-btn edit" onclick="startEditIp('${ip.id}')" style="padding: 2px 4px; font-size:11px;">修改</button>
-
                             ${ip.id !== 'OTHERS' ? `<button class="action-btn delete" onclick="deleteIp('${ip.id}')" style="padding: 2px 4px; font-size:11px;">刪除</button>` : ''}
-
                         </div>
-
                     </div>`;
-
             });
-
-
 
             const platformContainer = document.getElementById('platform-manager-list'); platformContainer.innerHTML = '';
             platformSettings.forEach(plat => {
-                // 🎯 判斷名稱開頭是否有 Emoji
                 const hasEmoji = plat.name ? /^[\p{Emoji_Presentation}\p{Extended_Pictographic}]/u.test(plat.name.trim()) : false;
-                
-                // 如果有上傳圖片就用圖片；如果名稱開頭有 Emoji 就不用預設購物車 🛒；否則用 🛒
                 const iconTag = plat.pic ? `<img src="${plat.pic}" class="platform-tag-icon">` : (hasEmoji ? '' : '🛒 ');
                 
                 platformContainer.innerHTML += `
@@ -3106,415 +2904,189 @@
                         </div>
                     </div>`;
             });
-
         }
-
-
 
         function startEditIp(id) {
-
             const ip = ipSettings.find(item => item.id === id); if (!ip) return;
-
             document.getElementById('edit-ip-id').value = ip.id;
-
             document.getElementById('new-ip-name').value = ip.name;
-
             document.getElementById('new-ip-color').value = ip.color;
-
             if (ip.pic) {
-
                 document.getElementById('new-ip-pic').value = ip.pic;
-
                 document.getElementById('new-ip-icon-preview').src = ip.pic;
-
                 document.getElementById('new-ip-icon-preview').style.display = 'block';
-
                 document.getElementById('new-ip-icon-placeholder').style.display = 'none';
-
                 document.getElementById('ip-icon-clear-btn').style.display = 'inline-block';
-
             } else { clearIpIconUpload(); }
-
             document.getElementById('ip-submit-btn').innerText = '💾 儲存修改';
-
         }
 
-
-
         function addNewIp() {
-
             const editId = document.getElementById('edit-ip-id').value;
-
             const nameInput = document.getElementById('new-ip-name');
-
             const colorInput = document.getElementById('new-ip-color');
-
             const picInput = document.getElementById('new-ip-pic');
-
             const name = nameInput.value.trim(); const color = colorInput.value; const pic = picInput.value;
-
-
 
             if (!name && !pic) return alert('請輸入 IP 名稱或上傳圖標！');
 
-
-
             if (editId) {
-
                 const ip = ipSettings.find(item => item.id === editId);
-
                 if (ip) {
-
                     const oldId = ip.id;
-
                     const newId = name ? name.toUpperCase().replace(/\s+/g, '_') : 'IP_' + Date.now();
-
                     goodsList.forEach(item => {
-
                         if (Array.isArray(item.ip)) {
-
                             item.ip = item.ip.map(val => val === oldId ? newId : val);
-
                         }
-
                     });
-
                     ip.id = newId; ip.name = name; ip.color = color; ip.textColor = getContrastYIQ(color); ip.pic = pic;
-
                     if (currentIPFilter === oldId) currentIPFilter = newId;
-
                 }
-
                 document.getElementById('edit-ip-id').value = '';
-
                 document.getElementById('ip-submit-btn').innerText = '＋新增 IP';
-
             } else {
-
                 const id = name ? name.toUpperCase().replace(/\s+/g, '_') : 'IP_' + Date.now();
-
                 if (ipSettings.some(ip => ip.id === id)) return alert('該 IP 已存在！');
-
                 ipSettings.push({ id, name, color, textColor: getContrastYIQ(color), pic });
-
             }
-
-
 
             try { localStorage.setItem('goodsTrackerIpSettings', JSON.stringify(ipSettings)); } catch(e){}
-
             nameInput.value = ''; clearIpIconUpload(); saveData(); renderSettingsManager();
-
         }
-
-
 
         function updateIpColor(id, newColor) {
-
             const ip = ipSettings.find(item => item.id === id);
-
             if (ip) {
-
                 ip.color = newColor; ip.textColor = getContrastYIQ(newColor);
-
                 try { localStorage.setItem('goodsTrackerIpSettings', JSON.stringify(ipSettings)); } catch(e){}
-
                 renderSettingsManager(); render();
-
             }
-
         }
-
-
 
         function deleteIp(id) {
-
             if (id === 'OTHERS') return;
-
             if (confirm(`確定要刪除 IP 嗎？相關物品會自動歸類到「其他」。`)) {
-
                 goodsList.forEach(item => { if (Array.isArray(item.ip)) item.ip = item.ip.map(val => val === id ? 'OTHERS' : val); });
-
                 ipSettings = ipSettings.filter(ip => ip.id !== id);
-
                 if (currentIPFilter === id) currentIPFilter = 'all';
-
                 try { localStorage.setItem('goodsTrackerIpSettings', JSON.stringify(ipSettings)); } catch(e){}
-
                 saveData(); renderSettingsManager();
-
             }
-
         }
-
-
 
         function startEditPlatform(id) {
-
             const plat = platformSettings.find(item => item.id === id); if (!plat) return;
-
             document.getElementById('edit-platform-id').value = plat.id;
-
             document.getElementById('new-platform-name').value = plat.name;
-
             if (plat.pic) {
-
                 document.getElementById('new-platform-pic').value = plat.pic;
-
                 document.getElementById('new-platform-icon-preview').src = plat.pic;
-
                 document.getElementById('new-platform-icon-preview').style.display = 'block';
-
                 document.getElementById('new-platform-icon-placeholder').style.display = 'none';
-
                 document.getElementById('platform-icon-clear-btn').style.display = 'inline-block';
-
             } else { clearPlatformIconUpload(); }
-
             document.getElementById('platform-submit-btn').innerText = '💾 儲存修改';
-
         }
 
-
-
         function addNewPlatform() {
-
             const editId = document.getElementById('edit-platform-id').value;
-
             const input = document.getElementById('new-platform-name');
-
             const picInput = document.getElementById('new-platform-pic');
-
             const name = input.value.trim(); const pic = picInput.value;
-
-
 
             if (!name && !pic) return alert('請輸入平台名稱或上傳圖標！');
 
-
-
             if (editId) {
-
                 const plat = platformSettings.find(item => item.id === editId);
-
                 if (plat) {
-
                     const oldId = plat.id;
-
                     const newId = name ? name : 'PLAT_' + Date.now();
-
                     goodsList.forEach(item => { if (item.platform === oldId) item.platform = newId; });
-
                     plat.id = newId; plat.name = name; plat.pic = pic;
-
                 }
-
                 document.getElementById('edit-platform-id').value = '';
-
                 document.getElementById('platform-submit-btn').innerText = '＋新增平台';
-
             } else {
-
                 const id = name ? name : 'PLAT_' + Date.now();
-
                 if (platformSettings.some(p => p.id === id)) return alert('該平台已存在！');
-
                 const newPlat = { id, name, pic };
-
                 const otherIdx = platformSettings.findIndex(p => p.id === '其他');
-
                 if (otherIdx > -1) platformSettings.splice(otherIdx, 0, newPlat);
-
                 else platformSettings.push(newPlat);
-
             }
-
-
 
             try { localStorage.setItem('goodsTrackerPlatformSettings', JSON.stringify(platformSettings)); } catch(e){}
-
             input.value = ''; clearPlatformIconUpload(); saveData(); renderSettingsManager();
-
         }
-
-
 
         function deletePlatform(id) {
-
             if (id === '其他') return;
-
             if (confirm(`確定要刪除平台嗎？相關物品會自動轉為「其他」。`)) {
-
                 goodsList.forEach(item => { if (item.platform === id) item.platform = '其他'; });
-
                 platformSettings = platformSettings.filter(p => p.id !== id);
-
                 try { localStorage.setItem('goodsTrackerPlatformSettings', JSON.stringify(platformSettings)); } catch(e){}
-
                 saveData(); renderSettingsManager();
-
             }
-
         }
-
-
 
         function renderFormIpTags() {
-
             const container = document.getElementById('form-ip-container'); container.innerHTML = '';
-
             ipSettings.forEach(ip => {
-
                 const iconTag = ip.pic ? `<img src="${ip.pic}" class="square-badge-icon">` : '';
-
                 container.innerHTML += `
-
                     <div class="ip-tag-option" data-value="${ip.id}" style="background-color:${ip.color}; color:${ip.textColor || getContrastYIQ(ip.color)}; border-color:${ip.textColor}" onclick="toggleFormIP('${ip.id}')">
-
                         ${iconTag}${ip.name}
-
                     </div>`;
-
             });
-
             updateFormIPClasses();
-
         }
-
-
 
         function toggleFormIP(val) {
-
             const index = selectedFormIPs.indexOf(val);
-
             if (index > -1) { if (selectedFormIPs.length > 1) selectedFormIPs.splice(index, 1); }
-
             else { selectedFormIPs.push(val); }
-
             updateFormIPClasses();
-
         }
-
-
 
         function updateFormIPClasses() {
-
             document.querySelectorAll('.ip-tag-option').forEach(el => {
-
                 const val = el.getAttribute('data-value');
-
                 if (selectedFormIPs.includes(val)) {
-
                     el.classList.remove('unselected');
-
                     const ip = ipSettings.find(item => item.id === val);
-
                     if (ip) { el.style.backgroundColor = ip.color; el.style.color = ip.textColor || getContrastYIQ(ip.color); }
-
                 } else {
-
                     el.classList.add('unselected'); el.style.backgroundColor = '#f1f3f5'; el.style.color = 'var(--text-color)';
-
                 }
-
             });
-
         }
-
-
 
         function renderFormPlatforms() {
             const select = document.getElementById('form-platform'); select.innerHTML = '';
             platformSettings.forEach(plat => {
                 const platName = plat.name || '(純Icon平台)';
                 const hasEmoji = /^[\p{Emoji_Presentation}\p{Extended_Pictographic}]/u.test(platName.trim());
-                // 下拉選單中，如果有圖片或已有 Emoji 就只顯示名稱，否則補上 🛒
                 const prefix = plat.pic ? '' : (hasEmoji ? '' : '🛒 ');
                 select.innerHTML += `<option value="${plat.id}">${prefix}${platName}</option>`;
             });
         }
 
-
-
         function toggleStatus(index, event) {
-
             if (event) event.stopPropagation();
-
             const item = goodsList[index];
-
             if (item.status === '待發貨') item.status = '待收貨';
-
             else if (item.status === '待收貨') item.status = '已到貨';
-
             else if (item.status === '已到貨') item.status = '完成';
-
             else item.status = '待發貨';
-
             saveData();
-
         }
 
-
-
-        // 🎯 1. 優先推送雲端，手機本地滿了就 Ignore，絕不報錯
-        function saveData() {
-            pushToCloud();
-
-            try { 
-                localStorage.setItem('goodsTrackerData', JSON.stringify(goodsList)); 
-            } catch(e) {
-                console.warn('⚠️ 手機本地空間已滿，資料已安全寫入 Supabase 雲端');
-            }
-
-            render();
-        }
-
-        // 🎯 2. 手動按「🔄 同步」：正確撈取雲端資料並即時重繪介面
-        async function connectCloudSync() {
-            const keyInput = document.getElementById('supabase-secret-key').value.trim();
-            if (!keyInput) return alert('請先輸入暗號！');
-
-            userSecretKey = keyInput;
-            try { localStorage.setItem('goodsTrackerSecretKey', userSecretKey); } catch(e){}
-
-            try {
-                const { data, error } = await supabaseClient
-                    .from('user_data')
-                    .select('data_json, updated_at')
-                    .eq('secret_key', userSecretKey)
-                    .single();
-
-                if (error && error.code !== 'PGRST116') {
-                    alert('⚠️ 連線雲端失敗：' + error.message);
-                    return;
-                }
-
-                if (data && data.data_json) {
-                    // 解包並即時繪製畫面
-                    applyCloudData(data.data_json);
-
-                    lastSyncTime = new Date(data.updated_at).getTime();
-                    try { localStorage.setItem('goodsTrackerLastSyncTime', lastSyncTime); } catch(e){}
-
-                    alert('✨ 已成功連結暗號，並為你載入雲端最新數據！');
-                } else {
-                    await pushToCloud();
-                    alert('✨ 專屬暗號已建立，已將目前資料備份至雲端！');
-                }
-            } catch (err) {
-                // 如果是 Quota 警告則自動靜默處理，不跳錯誤 Alert
-                if (err && err.message && err.message.includes('quota')) {
-                    alert('✨ 已成功連結暗號，並為你載入雲端最新數據！');
-                } else {
-                    alert('⚠️ 同步發生錯誤：' + (err.message || err));
-                }
-            }
-        }
-
+        // 🎯 雲端解包套用：徹底修復，包含 UI DOM 更新與本地防爆
         function applyCloudData(payload) {
             if (!payload) return;
 
-            // 套用手帳標題
+            // 1. 套用手帳標題
             if (payload.headerTitle) {
                 headerTitle = payload.headerTitle;
                 const mainHeader = document.getElementById('main-header');
@@ -3524,7 +3096,7 @@
                 try { localStorage.setItem('goodsTrackerHeaderTitle', headerTitle); } catch(e){}
             }
 
-            // 套用預設匯率
+            // 2. 套用預設匯率
             if (payload.globalRate) {
                 globalRate = parseFloat(payload.globalRate);
                 const rateInput = document.getElementById('global-rate');
@@ -3532,19 +3104,19 @@
                 try { localStorage.setItem('goodsTrackerRate', globalRate); } catch(e){}
             }
 
-            // 套用 IP 分類
+            // 3. 套用 IP 分類
             if (payload.ipSettings) {
                 ipSettings = payload.ipSettings;
                 try { localStorage.setItem('goodsTrackerIpSettings', JSON.stringify(ipSettings)); } catch(e){}
             }
 
-            // 套用平台
+            // 4. 套用平台
             if (payload.platformSettings) {
                 platformSettings = payload.platformSettings;
                 try { localStorage.setItem('goodsTrackerPlatformSettings', JSON.stringify(platformSettings)); } catch(e){}
             }
 
-            // 套用谷子列表（手機 LocalStorage 爆滿時，靜默改用記憶體渲染）
+            // 5. 套用谷子列表
             if (payload.goodsList && Array.isArray(payload.goodsList)) {
                 goodsList = payload.goodsList;
                 try { 
@@ -3554,7 +3126,7 @@
                 }
             }
 
-            // 重新計算並繪製所有 UI
+            // 6. 即時重繪畫面
             calculateConvertedPrice();
             renderSettingsManager();
             renderFormPlatforms();
@@ -3562,20 +3134,18 @@
             render();
         }
 
-        // 2. 儲存時優先推送雲端
+        // 🎯 儲存資料（本地 + 雲端）
         function saveData() {
             pushToCloud();
-
             try { 
                 localStorage.setItem('goodsTrackerData', JSON.stringify(goodsList)); 
             } catch(e) {
                 console.warn('⚠️ 本地暫存已滿，數據已安全寫入 Supabase');
             }
-
             render();
         }
 
-        // 3. 手動按「🔄 同步」
+        // 🎯 手動點擊「🔄 同步」
         async function connectCloudSync() {
             const keyInput = document.getElementById('supabase-secret-key').value.trim();
             if (!keyInput) return alert('請先輸入暗號！');
@@ -3605,11 +3175,11 @@
                     alert('✨ 專屬暗號已建立，已將目前資料備份至雲端！');
                 }
             } catch (err) {
-                alert('⚠️ 同步發生錯誤：' + err.message);
+                alert('⚠️ 同步發生錯誤：' + (err.message || err));
             }
         }
 
-        // 🎯 3. 背景自動比對：比對成功後自動更新介面
+        // 🎯 背景自動比對更新
         async function autoCheckAndSync() {
             if (!userSecretKey) return;
             try {
@@ -3632,113 +3202,80 @@
             } catch (err) { console.error('自動比對失敗:', err); }
         }
 
+        // 🎯 推送本地最新資料到雲端
+        async function pushToCloud() {
+            if (!userSecretKey) return;
+            const payload = { goodsList, globalRate, ipSettings, platformSettings, headerTitle };
+            const nowIso = new Date().toISOString();
+            
+            try {
+                const { error } = await supabaseClient
+                    .from('user_data')
+                    .upsert({ 
+                        secret_key: userSecretKey, 
+                        data_json: payload, 
+                        updated_at: nowIso 
+                    });
+
+                if (!error) {
+                    lastSyncTime = new Date(nowIso).getTime();
+                    try { localStorage.setItem('goodsTrackerLastSyncTime', lastSyncTime); } catch(e){}
+                }
+            } catch (err) { console.error('同步雲端失敗:', err); }
+        }
 
         function changeSortMode(value) {
-
             currentSortMode = value;
-
             try { localStorage.setItem('goodsTrackerSortMode', currentSortMode); } catch(e){}
-
             render();
-
         }
-
-
 
         function parseArrivalDate(str) {
-
             if (!str) return null;
-
             let matches = str.match(/\d+/g); if (!matches) return null;
-
             let year = 2026, month = 1;
-
             if (matches.length === 1) month = parseInt(matches[0]);
-
             else if (matches.length >= 2) { year = parseInt(matches[0]); if (year < 100) year += 2000; month = parseInt(matches[1]); }
-
             return new Date(year, month - 1, 1).getTime();
-
         }
-
-
 
         function openLightbox(picSrc, event) {
-
             if (event) event.stopPropagation();
-
             if (!picSrc || (!picSrc.startsWith('http') && !picSrc.startsWith('data:image'))) return;
-
             document.getElementById('lightbox-img').src = picSrc;
-
             document.getElementById('lightbox').classList.add('active');
-
         }
-
-
 
         function closeLightbox() { document.getElementById('lightbox').classList.remove('active'); }
 
-
-
         function calculateConvertedPrice() {
-
             const amount = parseFloat(document.getElementById('form-paid').value) || 0;
-
             const currency = document.getElementById('form-currency').value;
-
             const balAmount = parseFloat(document.getElementById('form-balance').value) || 0;
-
             const balCurrency = document.getElementById('form-balance-currency').value;
-
             const preview = document.getElementById('conversion-preview');
-
             let parts = [];
-
-            // 🎯 預覽折算同樣保留 .toFixed(2)
             if (amount > 0) parts.push(currency === 'RMB' ? `已付: ¥${amount} (折合 $${(amount * globalRate).toFixed(2)} HKD)` : `已付: $${amount} HKD`);
-
             if (balAmount > 0) parts.push(balCurrency === 'RMB' ? `尾款: ¥${balAmount} (折合 $${(balAmount * globalRate).toFixed(2)} HKD)` : `尾款: $${balAmount} HKD`);
-
             preview.innerHTML = parts.length > 0 ? `💡 預覽折算：` + parts.join(' | ') : '';
-
         }
-
-
 
         function handleImageUpload(event) {
-
             const file = event.target.files[0]; if (!file) return;
-
             const reader = new FileReader();
-
             reader.onload = function(e) {
-
                 compressImage(e.target.result, 500, 0.7).then(compressed => {
-
                     document.getElementById('form-pic').value = compressed;
-
                     document.getElementById('pic-preview').innerHTML = `<img src="${compressed}">`;
-
                 });
-
             };
-
             reader.readAsDataURL(file);
-
         }
-
-
 
         function clearUploadedImage() {
-
             document.getElementById('form-pic').value = ''; document.getElementById('form-file').value = '';
-
             document.getElementById('pic-preview').innerHTML = `<span style="font-size:10px; color:var(--text-light);">📸 無圖</span>`;
-
         }
-
-
 
         function calculateStats() {
             let imminent = 0, pending = 0, balTotalRMB = 0;
@@ -3749,8 +3286,6 @@
                     let arrTime = parseArrivalDate(item.arrived); 
                     if (arrTime !== null && arrTime <= currentTimestamp) imminent++; 
                 }
-                
-                // 🎯 核心修正：只有在「未勾選已全付」且「狀態不是完成」的情況下，才計算尾款
                 if (!item.fullpaid && item.status !== '完成') {
                     const balInRMB = (item.balanceCurrency || 'RMB') === 'RMB' ? Number(item.balance || 0) : (Number(item.balance || 0) / globalRate);
                     balTotalRMB += balInRMB;
@@ -3761,84 +3296,36 @@
             document.getElementById('total-balance').innerText = `¥${Math.round(balTotalRMB)}`;
         }
 
-
-
         function render() {
-
-            // ================= 1. 即時重新計算所有新狀態與 IP 的數據計數 =================
-
             let totalAll = goodsList.length;
-
             let statusCounts = { '待發貨': 0, '待收貨': 0, '已到貨': 0, '完成': 0 };
-
-            
-
             let ipCounts = {};
-
             ipSettings.forEach(ip => ipCounts[ip.id] = 0);
-
             ipCounts['OTHERS'] = 0;
 
-
-
             goodsList.forEach(item => {
-
                 if (statusCounts.hasOwnProperty(item.status)) statusCounts[item.status]++;
-
-                
-
                 let matchStatus = currentStatusFilter === 'all' ? true : item.status === currentStatusFilter;
-
                 if (matchStatus) {
-
                     const itemIps = Array.isArray(item.ip) ? item.ip : [item.ip || 'OTHERS'];
-
                     itemIps.forEach(ipId => {
-
                         if (ipCounts.hasOwnProperty(ipId)) ipCounts[ipId]++;
-
                         else ipCounts['OTHERS']++;
-
                     });
-
                 }
-
             });
-
-
-
-            // ================= 2. 渲染小紅書風格狀態 Tab Filters =================
 
             const statusContainer = document.getElementById('status-filters');
-
-            let statusHTML = '';
-
-            
-
-            statusHTML += `<button class="filter-btn ${currentStatusFilter === 'all' ? 'active' : ''}" onclick="filterStatus('all', event)">全部 (${totalAll})</button>`;
-
-            
-
+            let statusHTML = `<button class="filter-btn ${currentStatusFilter === 'all' ? 'active' : ''}" onclick="filterStatus('all', event)">全部 (${totalAll})</button>`;
             ['待發貨', '待收貨', '已到貨', '完成'].forEach(st => {
-
                 let c = statusCounts[st] || 0;
-
                 let countDisplay = c > 0 ? ` (${c})` : ''; 
-
                 statusHTML += `<button class="filter-btn ${currentStatusFilter === st ? 'active' : ''}" onclick="filterStatus('${st}', event)">${st}${countDisplay}</button>`;
-
             });
-
-          
-
             statusContainer.innerHTML = statusHTML;
 
-
-
-            // ================= 3. 渲染 IP Filters (依數量由多到少排序) =================
             const filterContainer = document.getElementById('ip-filters');
             let currentStatusTotal = currentStatusFilter === 'all' ? totalAll : (statusCounts[currentStatusFilter] || 0);
-                    
             let ipHTML = `
                 <button class="filter-btn ${currentIPFilter === 'all' ? 'active' : ''}" onclick="filterIP('all', event)">
                     <div class="ip-circle-wrapper" style="background-color: var(--primary-light); color: var(--primary-color); border-color: var(--primary-color);">✨</div>
@@ -3846,18 +3333,12 @@
                 </button>
             `;
             
-            // 🎯 複製一份 ipSettings 並根據「當前狀態下的數量 (ipCounts)」進行降序排序
             let sortedIpSettings = [...ipSettings].sort((a, b) => {
-                // 將「其他」固定排在最後面
                 if (a.id === 'OTHERS') return 1;
                 if (b.id === 'OTHERS') return -1;
-
-                const countA = ipCounts[a.id] || 0;
-                const countB = ipCounts[b.id] || 0;
-                return countB - countA; // 數量多的排前面
+                return (ipCounts[b.id] || 0) - (ipCounts[a.id] || 0);
             });
 
-            // 🎯 使用排序後的 sortedIpSettings 進行渲染
             sortedIpSettings.forEach(ip => {
                 let count = ipCounts[ip.id] || 0;
                 if (count > 0 || currentIPFilter === ip.id) {
@@ -3870,9 +3351,7 @@
 
                     if (ip.pic) {
                         innerContent = `<img src="${ip.pic}">`;
-                        if (emojiMatch) {
-                            displayName = ip.name.replace(emojiMatch[0], '').trim();
-                        }
+                        if (emojiMatch) displayName = ip.name.replace(emojiMatch[0], '').trim();
                     } else {
                         if (emojiMatch) {
                             innerContent = emojiMatch[0];
@@ -3892,13 +3371,8 @@
             });
             filterContainer.innerHTML = ipHTML;
 
-
-
-            // ================= 4. 列表數據篩選與卡片渲染 =================
-
             calculateStats();
 
-            // 🎯 更新尾款卡片高亮狀態（Active 時變粉紅 Highlight 樣式）
             const balCard = document.getElementById('balance-stat-card');
             if (balCard) {
                 if (isBalanceFilterActive) {
@@ -3911,115 +3385,60 @@
             }
 
             const container = document.getElementById('goods-container'); 
-
             container.innerHTML = '';
-
-            
 
             let filteredList = goodsList.filter(item => {
                 let statusMatch = currentStatusFilter === 'all' ? true : item.status === currentStatusFilter;
                 let ipMatch = currentIPFilter === 'all' ? true : (Array.isArray(item.ip) ? item.ip.includes(currentIPFilter) : item.ip === currentIPFilter);
-                
-                // 🎯 如果開啟咗尾款 Filter，只顯示「未全付 + 尾款 > 0 + 狀態未完成」嘅項目
                 let balanceMatch = true;
                 if (isBalanceFilterActive) {
                     balanceMatch = !item.fullpaid && (item.balance > 0) && item.status !== '完成';
                 }
-
                 return statusMatch && ipMatch && balanceMatch;
             });
 
-
-
             filteredList.sort((a, b) => {
-
                 if (currentSortMode.startsWith('arrived')) {
-
                     let tA = parseArrivalDate(a.arrived), tB = parseArrivalDate(b.arrived);
-
                     if (tA === null) return 1; if (tB === null) return -1;
-
                     return currentSortMode === 'arrived_desc' ? tA - tB : tB - tA;
-
                 } else {
-
                     let dA = a.date ? new Date(a.date).getTime() : 0, dB = b.date ? new Date(b.date).getTime() : 0;
-
                     return currentSortMode === 'order_desc' ? dB - dA : dA - dB;
-
                 }
-
             });
 
-
-
             if (filteredList.length === 0) {
-
                 container.innerHTML = `<div style="text-align:center; padding:40px; color:var(--text-light);">暫時無相關記錄，撳下方 "+" 加一件啦！</div>`; return;
-
             }
 
-
-
             filteredList.forEach((item) => {
-
                 const actualIndex = goodsList.indexOf(item); const card = document.createElement('div');
-
                 card.className = item.status === '完成' ? 'goods-card card-completed' : 'goods-card';
 
-
-
                 let statusClass = 'status-pending';
-
                 if (item.status === '待收貨') statusClass = 'status-shipped'; 
-
                 if (item.status === '已到貨') statusClass = 'status-arrived'; 
-
                 if (item.status === '完成') statusClass = 'status-completed'; 
-
                 
-
                 const isRMB = item.currency === 'RMB';
-
                 const originalPaidDisplay = `${isRMB ? '¥' : '$'}${Number(item.paid || 0).toFixed(2)}`;
-
-                
-
                 const balCurrency = item.balanceCurrency || 'RMB'; 
-
-                // 🎯 匯率會用 1.168 精確計算，但 .toFixed(2) 會將最終 HKD 格式化成小數點後 2 位
                 const totalCostHKD = (isRMB ? (item.paid * globalRate) : item.paid) + (balCurrency === 'RMB' ? ((item.balance || 0) * globalRate) : (item.balance || 0));
 
-
-
                 let ipBadgesHTML = '';
-
                 const itemIps = Array.isArray(item.ip) ? item.ip : [item.ip || 'OTHERS'];
-
                 itemIps.forEach(val => {
-
                     const ipSetting = ipSettings.find(ip => ip.id === val) || { name: val === 'OTHERS' ? '其他' : val, color: '#ecebeb', textColor: '#5c5556', pic: "" };
-
                     const iconTag = ipSetting.pic ? `<img src="${ipSetting.pic}" class="square-badge-icon">` : '';
-
                     ipBadgesHTML += `<span class="ip-badge" style="background-color: ${ipSetting.color}; color: ${ipSetting.textColor || getContrastYIQ(ipSetting.color)}">${iconTag}${ipSetting.name}</span> `;
-
                 });
 
-
-
                 const platSetting = platformSettings.find(p => p.id === item.platform);
-
                 const platName = (platSetting && platSetting.name) ? platSetting.name : (item.platform || '其他');
                 const hasEmoji = /^[\p{Emoji_Presentation}\p{Extended_Pictographic}]/u.test(platName.trim());
                 const platIconHTML = (platSetting && platSetting.pic) ? `<img src="${platSetting.pic}" class="platform-tag-icon">` : (hasEmoji ? '' : '🛒 ');
-                const platNameDisplay = platName;
-
-
-
                 const isRealImage = item.pic && (item.pic.startsWith('http') || item.pic.startsWith('data:image'));
-
-
 
                 card.innerHTML = `
                     <div class="goods-header">
@@ -4033,27 +3452,19 @@
                                 ? `<div class="pic-arrived-badge">📦 ${item.arrived}</div>` 
                                 : ''}
                         </div>
-
-                        <!-- 🎯 1. 加上 flex-direction: column 與 justify-content: space-between 確保底部對齊 -->
                         <div class="goods-details" style="display: flex; flex-direction: column; justify-content: space-between; height: 100px;">
-                            <!-- 上半部：標題、平台、下單日期 -->
                             <div>
                                 <div class="goods-title">${item.item}</div>
-                                
                                 <div style="display: flex; gap: 8px; align-items: center; margin-top: 3px; margin-bottom: 3px; font-size: 12px;">
-                                    <span class="platform-tag">${platIconHTML}${platNameDisplay}</span>
+                                    <span class="platform-tag">${platIconHTML}${platName}</span>
                                     <span style="color: var(--text-light); font-size: 11px;">HKD <span class="total-cost-tag">${totalCostHKD.toFixed(2)}</span></span>
                                 </div>
-
-                                <!-- 🎯 加上 margin-top: 5px; 拉開與上面平台的距離 -->
                                 <div class="goods-meta" style="padding-left: 5px; margin-top: 5px;">
                                     <span class="meta-item" style="font-size: 11px; color: var(--text-light); background: transparent; padding: 0;">
                                         📅&nbsp;&nbsp;${item.date || '無日期'} 下單
                                     </span>
                                 </div>
                             </div>
-
-                            <!-- 下半部：已付、尾款、付款狀態（完美貼齊相片底部） -->
                             <div style="font-size: 11px; color: var(--text-light); display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding-left: 2px;">
                                 <span>已付: <span class="price-tag">${originalPaidDisplay}</span></span>
                                 <span>尾款: ${item.balance ? `<span class="balance-tag">${((item.balanceCurrency || 'RMB') === 'RMB' ? '¥' : '$') + item.balance}</span>` : `無`}</span>
@@ -4061,9 +3472,7 @@
                             </div>
                         </div>
                     </div>
-
                     ${item.remarks ? `<div class="remarks-section" style="margin-top: 6px;">📝 ${item.remarks}</div>` : ''}
-
                     <div class="card-actions">
                         <button type="button" class="action-btn duplicate" onclick="duplicateGoods(${actualIndex})" style="color:#6c757d;">複製</button>
                         <button type="button" class="action-btn edit" onclick="editGoods(${actualIndex})">修改</button>
@@ -4071,138 +3480,72 @@
                     </div>`;
 
                 container.appendChild(card);
-
             });
 
-            
             setTimeout(setupDynamicMasks, 50);
-
         } 
 
-
-
         function filterStatus(status, event) {
-
             currentStatusFilter = status;
-
             render(); 
-
         }
-
-
 
         function filterIP(ip, event) {
-
             currentIPFilter = ip;
-
             render(); 
-
         }
-
-
 
         function openModal(action, index = null) {
-
             const modal = document.getElementById('goods-modal'); 
-
             document.getElementById('goods-form').reset();
-
             clearUploadedImage(); 
-
             document.getElementById('conversion-preview').innerText = '';
-
             renderFormIpTags(); 
-
             renderFormPlatforms();
 
-
-
             if (action === 'edit' && index !== null) {
-
                 document.getElementById('modal-action-title').innerText = '修改谷子記錄';
-
                 const item = goodsList[index]; document.getElementById('edit-index').value = index;
-
                 document.getElementById('form-item').value = item.item;
-
                 selectedFormIPs = Array.isArray(item.ip) ? [...item.ip] : [item.ip || 'OTHERS'];
-
                 updateFormIPClasses(); document.getElementById('form-status').value = item.status;
-
                 document.getElementById('form-date').value = item.date;
 
-
-
                 let yVal = '', mVal = '';
-
                 if (item.arrived) {
-
                     const yM = item.arrived.match(/(\d+)年/), mM = item.arrived.match(/(\d+)月/);
-
                     if (yM) yVal = yM[1]; if (mM) mVal = mM[1];
-
                 }
-
                 document.getElementById('form-arrived-year').value = yVal; document.getElementById('form-arrived-month').value = mVal;
-
                 document.getElementById('form-paid').value = item.paid; document.getElementById('form-currency').value = item.currency || 'HKD';
-
                 document.getElementById('form-balance').value = item.balance; document.getElementById('form-balance-currency').value = item.balanceCurrency || 'RMB';
-
                 document.getElementById('form-platform').value = platformSettings.some(p => p.id === item.platform) ? item.platform : '其他';
-
                 document.getElementById('form-fullpaid').checked = item.fullpaid; document.getElementById('form-pic').value = item.pic;
-
                 document.getElementById('form-remarks').value = item.remarks;
 
-
-
                 if (item.pic) {
-
                     document.getElementById('pic-preview').innerHTML = (item.pic.startsWith('http') || item.pic.startsWith('data:image')) ? `<img src="${item.pic}">` : `<span>${item.pic}</span>`;
-
                 }
-
                 calculateConvertedPrice();
-
             } else {
-
                 document.getElementById('modal-action-title').innerText = '新增谷子記錄'; document.getElementById('edit-index').value = '';
-
                 selectedFormIPs = ipSettings.length > 0 ? [ipSettings[0].id] : ['OTHERS']; updateFormIPClasses();
-
                 document.getElementById('form-date').value = new Date().toISOString().split('T')[0];
-
                 document.getElementById('form-currency').value = 'HKD'; document.getElementById('form-balance-currency').value = 'RMB';
-
                 document.getElementById('form-arrived-year').value = new Date().getFullYear(); document.getElementById('form-arrived-month').value = '';
-
                 if (platformSettings.length > 0) document.getElementById('form-platform').value = platformSettings[0].id;
-
             }
 
-
-
             document.body.classList.add('modal-open');
-
             modal.classList.add('active'); 
-
         }
-
-
 
         function closeModal() { 
-
             const modal = document.getElementById('goods-modal');
-
             modal.classList.remove('active'); 
-
             document.body.classList.remove('modal-open');
-
         }
-
         
-
         function saveGoods(event) {
             event.preventDefault(); const index = document.getElementById('edit-index').value;
             const y = document.getElementById('form-arrived-year').value.trim(), m = document.getElementById('form-arrived-month').value.trim();
@@ -4226,376 +3569,171 @@
 
             if (index !== '') goodsList[index] = itemData; else goodsList.push(itemData);
             
-            try { 
-                localStorage.setItem('goodsTrackerData', JSON.stringify(goodsList)); 
-            } catch(e){}
-            
-            pushToCloud(); // 👈 🎯 補上這行：新增/修改谷子時，立即發送到雲端！
-
+            saveData();
             closeModal();
             render(); 
         }
 
-
-
         function duplicateGoods(index) { const dup = JSON.parse(JSON.stringify(goodsList[index])); dup.item += " (Copy)"; goodsList.splice(index + 1, 0, dup); saveData(); }
-
         function editGoods(index) { openModal('edit', index); }
-
         function deleteGoods(index) { if (confirm('確定要刪除這個記錄嗎？')) { goodsList.splice(index, 1); saveData(); } }
 
-
-
         function exportData() {
-
             try {
-
                 const jsonString = JSON.stringify({ goodsList, globalRate, ipSettings, platformSettings, headerTitle }, null, 2);
-
                 const blob = new Blob([jsonString], { type: "application/json;charset=utf-8" });
-
                 const url = URL.createObjectURL(blob); const a = document.createElement('a');
-
                 a.href = url; a.download = `goodsbackup_${new Date().toISOString().split('T')[0]}.json`;
-
                 document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
-
             } catch (err) { alert('備份失敗：' + err.message); }
-
         }
 
-
-
         function importData() {
-
             const input = document.createElement('input'); input.type = 'file'; input.accept = '.json';
-
             input.onchange = e => {
-
                 const file = e.target.files[0], reader = new FileReader();
-
                 reader.onload = re => {
-
                     try {
-
                         const parsed = JSON.parse(re.target.result);
-
                         let incomingList = parsed.goodsList || (Array.isArray(parsed) ? parsed : []);
-
                         if (incomingList.length === 0) return alert('格式錯誤，請上傳有效的備份 JSON 檔案。');
 
-
-
                         incomingList.forEach(item => {
-
                             if (item.status === '已出貨' || item.status === '出貨') item.status = '待收貨';
-
                             if (item.status === '已到貨' || item.status === '到貨') item.status = '已到貨';
-
                             if (item.status === '待出貨') item.status = '待發貨';
-
                             if (typeof item.ip === 'string') item.ip = [item.ip];
-
                             if (!item.ip) item.ip = ["OTHERS"];
-
                         });
 
-
-
                         let incomingPlatformSettings = [];
-
                         if (parsed.platformSettings) {
-
                             if (parsed.platformSettings.length > 0 && typeof parsed.platformSettings[0] === 'string') {
-
                                 incomingPlatformSettings = parsed.platformSettings.map(p => ({ id: p, name: p, pic: "" }));
-
                             } else { incomingPlatformSettings = parsed.platformSettings; }
-
                         }
 
-
-
                         let incomingIpSettings = parsed.ipSettings || [];
-
                         incomingIpSettings.forEach(ip => { if (!ip.hasOwnProperty('pic')) ip.pic = ""; });
-
-
 
                         const overwrite = !confirm('發現手帳記錄！\n\n【確定】將備份與現有記錄「合併」\n【取消】將備份「完全覆蓋」現有紀錄');
 
-
-
                         const compressTasks = [];
-
                         
-
                         incomingList.forEach(item => {
-
                             if (item.pic && item.pic.startsWith('data:image')) {
-
                                 const task = compressImage(item.pic, 500, 0.7).then(compressed => { item.pic = compressed; });
-
                                 compressTasks.push(task);
-
                             }
-
                         });
-
-
 
                         incomingIpSettings.forEach(ip => {
-
                             if (ip.pic && ip.pic.startsWith('data:image')) {
-
                                 const task = compressImage(ip.pic, 100, 0.7).then(compressed => { ip.pic = compressed; });
-
                                 compressTasks.push(task);
-
                             }
-
                         });
-
-
 
                         incomingPlatformSettings.forEach(plat => {
-
                             if (plat.pic && plat.pic.startsWith('data:image')) {
-
                                 const task = compressImage(plat.pic, 100, 0.7).then(compressed => { plat.pic = compressed; });
-
                                 compressTasks.push(task);
-
                             }
-
                         });
-
-
 
                         Promise.all(compressTasks).then(() => {
-
                             if (overwrite) {
-
                                 goodsList = incomingList;
-
-                                if (parsed.globalRate) { globalRate = parseFloat(parsed.globalRate); localStorage.setItem('goodsTrackerRate', globalRate); }
-
-                                if (parsed.ipSettings) { ipSettings = incomingIpSettings; localStorage.setItem('goodsTrackerIpSettings', JSON.stringify(ipSettings)); }
-
-                                if (incomingPlatformSettings.length > 0) { platformSettings = incomingPlatformSettings; localStorage.setItem('goodsTrackerPlatformSettings', JSON.stringify(platformSettings)); }
-
-                                if (parsed.headerTitle) { headerTitle = parsed.headerTitle; localStorage.setItem('goodsTrackerHeaderTitle', headerTitle); }
-
+                                if (parsed.globalRate) { globalRate = parseFloat(parsed.globalRate); try { localStorage.setItem('goodsTrackerRate', globalRate); } catch(e){} }
+                                if (parsed.ipSettings) { ipSettings = incomingIpSettings; try { localStorage.setItem('goodsTrackerIpSettings', JSON.stringify(ipSettings)); } catch(e){} }
+                                if (incomingPlatformSettings.length > 0) { platformSettings = incomingPlatformSettings; try { localStorage.setItem('goodsTrackerPlatformSettings', JSON.stringify(platformSettings)); } catch(e){} }
+                                if (parsed.headerTitle) { headerTitle = parsed.headerTitle; try { localStorage.setItem('goodsTrackerHeaderTitle', headerTitle); } catch(e){} }
                             } else {
-
                                 incomingList.forEach(inc => { 
-
                                     if (!goodsList.some(ex => ex.item === inc.item && ex.date === inc.date && ex.paid === inc.paid)) { goodsList.push(inc); }
-
                                 });
-
                                 if (parsed.ipSettings) {
-
                                     incomingIpSettings.forEach(incIp => { 
-
                                         if (!ipSettings.some(ex => ex.id === incIp.id)) { ipSettings.push(incIp); } 
-
                                         else { let existing = ipSettings.find(ex => ex.id === incIp.id); if (existing && !existing.pic && incIp.pic) existing.pic = incIp.pic; }
-
                                     });
-
-                                    localStorage.setItem('goodsTrackerIpSettings', JSON.stringify(ipSettings));
-
+                                    try { localStorage.setItem('goodsTrackerIpSettings', JSON.stringify(ipSettings)); } catch(e){}
                                 }
-
                                 if (incomingPlatformSettings.length > 0) {
-
                                     incomingPlatformSettings.forEach(incP => { 
-
                                         if (!platformSettings.some(ex => ex.id === incP.id)) { platformSettings.push(incP); } 
-
                                         else { let existing = platformSettings.find(ex => ex.id === incP.id); if (existing && !existing.pic && incP.pic) existing.pic = incP.pic; }
-
                                     });
-
-                                    localStorage.setItem('goodsTrackerPlatformSettings', JSON.stringify(platformSettings));
-
+                                    try { localStorage.setItem('goodsTrackerPlatformSettings', JSON.stringify(platformSettings)); } catch(e){}
                                 }
-
                             }
-
                             saveData();
-
                         });
-
                     } catch (err) { alert('導入失敗：' + err.message); }
-
                 };
-
                 reader.readAsText(file);
-
             };
-
             input.click();
-
         }
-
-
 
         function resetToDefaultSystem() {
-
             if (confirm('🚨 警告：確定要還原手帳嗎？')) {
-
                 if (confirm('🔥 最後確認：你真的要清除所有數據嗎？')) {
-
                     try {
-
                         localStorage.clear();
-
                         alert('✨ 系統已成功還原！');
-
                         window.location.reload(); 
-
                     } catch(e) { alert('還原失敗：' + e.message); }
-
                 }
-
             }
-
         }
-
-
 
         if (window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches) {
-
             const style = document.createElement('style');
-
             style.innerHTML = 'html, body { overscroll-behavior-y: none !important; }';
-
             document.head.appendChild(style);
-
         }
-
         
-
         function switchSettingsSubPage(pageId) {
-
             resetSettingsForm();
-
             document.querySelectorAll('.settings-subpage').forEach(el => el.style.display = 'none');
-
             document.getElementById('subpage-' + pageId).style.display = 'block';
-
             
-
             ['title', 'ip', 'platform', 'system'].forEach(id => {
-
                 const btn = document.getElementById('tab-btn-' + id);
-
                 if (btn) {
-
                     btn.style.background = 'transparent';
-
                     btn.style.color = 'var(--text-light)';
-
                     btn.style.border = '1px solid var(--border-color)';
-
                 }
-
             });
-
             
-
             const activeBtn = document.getElementById('tab-btn-' + pageId);
-
             if (activeBtn) {
-
                 activeBtn.style.background = 'var(--primary-light)';
-
                 activeBtn.style.color = 'var(--primary-color)';
-
                 activeBtn.style.border = 'none';
-
             }
-
         }
-
-
 
         function forceHardRefresh() {
-
             const currentUrl = window.location.origin + window.location.pathname;
-
             const timestamp = Date.now();
-
             window.location.href = currentUrl + '?v=' + timestamp;
-
         }
 
-        // 🎯 2. 自動比對時間戳記與拉取最新數據
-        async function autoCheckAndSync() {
-            if (!userSecretKey) return;
-            try {
-                const { data, error } = await supabaseClient
-                    .from('user_data')
-                    .select('updated_at, data_json')
-                    .eq('secret_key', userSecretKey)
-                    .single();
-
-                if (error || !data) return;
-
-                const remoteTimestamp = new Date(data.updated_at).getTime();
-                const localTimestamp = Number(lastSyncTime);
-
-                // 如果雲端時間比本地最新，代表電腦或其他裝置改過，自動下載覆蓋本地
-                if (remoteTimestamp > localTimestamp) {
-                    applyCloudData(data.data_json);
-                    lastSyncTime = remoteTimestamp;
-                    localStorage.setItem('goodsTrackerLastSyncTime', lastSyncTime);
-                    render();
-                    alert('✨ 偵測到雲端最新記錄，已自動更新！');
-                }
-            } catch (err) { console.error('自動比對失敗:', err); }
-        }
-
-        // 🎯 3. 推送本地最新資料到雲端 (Save/Import 時自動觸發)
-        async function pushToCloud() {
-            if (!userSecretKey) return;
-            const payload = { goodsList, globalRate, ipSettings, platformSettings, headerTitle };
-            const nowIso = new Date().toISOString();
-            
-            try {
-                const { error } = await supabaseClient
-                    .from('user_data')
-                    .upsert({ 
-                        secret_key: userSecretKey, 
-                        data_json: payload, 
-                        updated_at: nowIso 
-                    });
-
-                if (!error) {
-                    lastSyncTime = new Date(nowIso).getTime();
-                    localStorage.setItem('goodsTrackerLastSyncTime', lastSyncTime);
-                }
-            } catch (err) { console.error('同步雲端失敗:', err); }
-        }
-
-        
         function disconnectCloudSync() {
             if (!userSecretKey) return alert('目前尚未連結任何暗號！');
             
             if (confirm('確定要斷開雲端連結嗎？\n\n斷開後會清空目前顯示的雲端數據，回復初始乾淨狀態。')) {
-                // 1. 清除雲端同步暗號與時間戳
                 userSecretKey = '';
                 lastSyncTime = 0;
                 localStorage.removeItem('goodsTrackerSecretKey');
                 localStorage.removeItem('goodsTrackerLastSyncTime');
 
-                // 2. 清空本地暫存的數據，重置為預設狀態
-                goodsList = []; // 或者設為 [] 完全清空
+                goodsList = []; 
                 localStorage.removeItem('goodsTrackerData');
                 
-                // 3. 重置輸入框與更新畫面
                 document.getElementById('supabase-secret-key').value = '';
                 render();
                 
@@ -4603,21 +3741,13 @@
             }
         }
 
-        // 🎯 全能重置：把系統設定內所有暫存 / 未儲存的欄位，通通還原為生效中的數據
         function resetSettingsForm() {
-            // 1. 還原手帳標題
             const headerInput = document.getElementById('custom-header-title');
-            if (headerInput) {
-                headerInput.value = headerTitle || '';
-            }
+            if (headerInput) headerInput.value = headerTitle || '';
 
-            // 2. 還原專屬暗號
             const keyInput = document.getElementById('supabase-secret-key');
-            if (keyInput) {
-                keyInput.value = userSecretKey || '';
-            }
+            if (keyInput) keyInput.value = userSecretKey || '';
 
-            // 3. 重置 IP 管理表格的輸入框與相片
             document.getElementById('edit-ip-id').value = '';
             document.getElementById('new-ip-name').value = '';
             document.getElementById('new-ip-color').value = '#ffccd5';
@@ -4625,21 +3755,16 @@
             const ipBtn = document.getElementById('ip-submit-btn');
             if (ipBtn) ipBtn.innerText = '＋新增 IP';
 
-            // 4. 重置平台管理表格的輸入框與相片
             document.getElementById('edit-platform-id').value = '';
             document.getElementById('new-platform-name').value = '';
             clearPlatformIconUpload();
             const platBtn = document.getElementById('platform-submit-btn');
             if (platBtn) platBtn.innerText = '＋新增平台';
 
-            // 5. 清空系統設定區所有未上傳的 File Input
             const fileInputs = document.querySelectorAll('#system-settings-panel input[type="file"]');
-            fileInputs.forEach(input => {
-                input.value = '';
-            });
+            fileInputs.forEach(input => { input.value = ''; });
         }
 
-        // 🎯 修改 / 搬家專屬暗號功能 (寫入新暗號，並清空舊暗號)
         async function changeSecretKey() {
             const newKey = document.getElementById('supabase-secret-key').value.trim();
             const oldKey = userSecretKey;
@@ -4648,31 +3773,23 @@
             if (newKey === oldKey) return alert('新暗號與目前使用的暗號相同，無需修改！');
 
             if (confirm(`確定要將數據由「${oldKey || '無'}」轉移至新暗號「${newKey}」嗎？\n\n⚠️ 注意：轉移後，舊暗號「${oldKey}」在雲端的資料將會被完全刪除！`)) {
-                
-                // 1. 先將目前的數據推送到新暗號
                 userSecretKey = newKey;
-                localStorage.setItem('goodsTrackerSecretKey', userSecretKey);
+                try { localStorage.setItem('goodsTrackerSecretKey', userSecretKey); } catch(e){}
                 await pushToCloud();
 
-                // 2. 如果之前有舊暗號，向 Supabase 刪除舊暗號的紀錄
                 if (oldKey) {
                     try {
-                        const { error } = await supabaseClient
+                        await supabaseClient
                             .from('user_data')
                             .delete()
                             .eq('secret_key', oldKey);
-                            
-                        if (error) console.error('刪除舊暗號失敗:', error);
-                    } catch (err) {
-                        console.error('刪除舊暗號失敗:', err);
-                    }
+                    } catch (err) { console.error('刪除舊暗號失敗:', err); }
                 }
 
                 alert(`✨ 數據已成功搬家至「${newKey}」！\n舊暗號「${oldKey}」的雲端資料已清空。`);
             }
         }
 
-        // 🎯 獨立按鈕：強制將本地覆蓋到雲端 (極少用到，需要雙重確認)
         async function forceUploadToCloud() {
             if (!userSecretKey) return alert('請先輸入並連結暗號！');
             if (confirm('⚠️ 確定要將「目前的本地數據」強制覆蓋到雲端嗎？\n\n這會取代雲端上原本的備份紀錄！')) {
@@ -4681,12 +3798,11 @@
             }
         }
 
-        // 🎯 銷毀 / 刪除雲端暗號紀錄功能
         async function deleteSecretKeyFromCloud() {
             if (!userSecretKey) return alert('目前尚未連結任何暗號，無法刪除！');
 
-            if (confirm(`🚨 警告：你確定要完全銷毀雲端暗號「${userSecretKey}」的資料嗎？\n\n這會從 Supabase 雲端資料庫中永久刪除此暗號的備份！`)) {
-                if (confirm(`🔥 最後確認：真的要刪除雲端上的「${userSecretKey}」嗎？\n\n（註：你的手機本地資料不會被刪除，但會自動斷開雲端連結。）`)) {
+            if (confirm(`🚨 警告：你確定要完全銷毀雲端暗號「${userSecretKey}」的資料嗎？`)) {
+                if (confirm(`🔥 最後確認：真的要刪除雲端上的「${userSecretKey}」嗎？`)) {
                     try {
                         const targetKey = userSecretKey;
                         const { error } = await supabaseClient
@@ -4697,7 +3813,6 @@
                         if (error) {
                             alert('刪除失敗：' + error.message);
                         } else {
-                            // 刪除成功後，清除本地的暗號與同步紀錄，並斷開連結
                             userSecretKey = '';
                             lastSyncTime = 0;
                             localStorage.removeItem('goodsTrackerSecretKey');
@@ -4713,18 +3828,7 @@
             }
         }
 
-        // 解包雲端數據載入本地
-        function applyCloudData(payload) {
-            if (payload.goodsList) { goodsList = payload.goodsList; localStorage.setItem('goodsTrackerData', JSON.stringify(goodsList)); }
-            if (payload.globalRate) { globalRate = payload.globalRate; localStorage.setItem('goodsTrackerRate', globalRate); }
-            if (payload.ipSettings) { ipSettings = payload.ipSettings; localStorage.setItem('goodsTrackerIpSettings', JSON.stringify(ipSettings)); }
-            if (payload.platformSettings) { platformSettings = payload.platformSettings; localStorage.setItem('goodsTrackerPlatformSettings', JSON.stringify(platformSettings)); }
-            if (payload.headerTitle) { headerTitle = payload.headerTitle; localStorage.setItem('goodsTrackerHeaderTitle', headerTitle); }
-        }
-
-        // 🎯 判斷是否滑動到最右側，動態開關羽化 Class
         function handleScrollMask(el) {
-            // clientWidth + scrollLeft 接近 scrollWidth 即代表到了最右邊
             const isAtEnd = el.scrollWidth - el.clientWidth - el.scrollLeft <= 3;
             if (isAtEnd) {
                 el.classList.remove('scroll-mask-right');
@@ -4733,19 +3837,19 @@
             }
         }
 
+        // 建議修改：先移除舊事件或改用具名函式，避免多次 render 時重複觸發
         function setupDynamicMasks() {
             const statusEl = document.getElementById('status-filters');
             const ipEl = document.getElementById('ip-filters');
-
+        
             [statusEl, ipEl].forEach(el => {
                 if (!el) return;
-                // 初始化檢查一次
                 handleScrollMask(el);
-                // 綁定 scroll 事件
-                el.onscroll = () => handleScrollMask(el);
+                el.removeEventListener('scroll', el._maskHandler);
+                el._maskHandler = () => handleScrollMask(el);
+                el.addEventListener('scroll', el._maskHandler);
             });
         }
-      
     </script>
 
 </body>
