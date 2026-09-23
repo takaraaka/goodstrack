@@ -2638,6 +2638,18 @@
 
     <script>
 
+        // 🛡️ 終極防爆安全盾：覆蓋原生的 setItem，手機本地滿了就靜默忽略，絕不彈出 Quota Exceeded Alert！
+        (function() {
+            const originalSetItem = localStorage.setItem.bind(localStorage);
+            localStorage.setItem = function(key, value) {
+                try {
+                    originalSetItem(key, value);
+                } catch (e) {
+                    console.warn('⚠️ 手機本地空間已滿，已安全攔截 LocalStorage 寫入：', key);
+                }
+            };
+        })();
+
       // 🌐 Supabase 雲端設定
         const SUPABASE_URL = "https://knmqsvsnccftshmcijxk.supabase.co";
         const SUPABASE_KEY = "sb_publishable_c_2lOi4u_oEXGz-aY6Bcvw_u-ZAo-fD";
