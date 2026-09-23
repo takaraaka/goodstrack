@@ -3521,17 +3521,23 @@
             }
         }
 
-        // 1. 雲端數據拆解與套用 (包裹 try-catch 防爆)
         function applyCloudData(cloudData) {
             if (!cloudData) return;
             
+            // 🎯 1. 套用手帳名（加上 try-catch 防爆，並直接更新畫面元素）
             if (cloudData.headerTitle) {
                 headerTitle = cloudData.headerTitle;
-                document.getElementById('main-header').innerText = headerTitle;
-                document.getElementById('custom-header-title').value = headerTitle;
+                
+                // 即時更新頂部標題與設定框文字
+                const mainHeader = document.getElementById('main-header');
+                const customTitleInput = document.getElementById('custom-header-title');
+                if (mainHeader) mainHeader.innerText = headerTitle;
+                if (customTitleInput) customTitleInput.value = headerTitle;
+
                 try { localStorage.setItem('goodsTrackerHeaderTitle', headerTitle); } catch(e){}
             }
 
+            // 🎯 2. 套用預設匯率
             if (cloudData.globalRate) {
                 globalRate = cloudData.globalRate;
                 const rateInput = document.getElementById('global-rate');
@@ -3539,25 +3545,29 @@
                 try { localStorage.setItem('goodsTrackerRate', globalRate); } catch(e){}
             }
 
+            // 🎯 3. 套用 IP 分類
             if (cloudData.ipCategories && Array.isArray(cloudData.ipCategories)) {
                 ipCategories = cloudData.ipCategories;
                 try { localStorage.setItem('goodsTrackerIPs', JSON.stringify(ipCategories)); } catch(e){}
             }
 
+            // 🎯 4. 套用購買平台
             if (cloudData.platformSettings && Array.isArray(cloudData.platformSettings)) {
                 platformSettings = cloudData.platformSettings;
                 try { localStorage.setItem('goodsTrackerPlatforms', JSON.stringify(platformSettings)); } catch(e){}
             }
 
+            // 🎯 5. 套用谷子列表（手機快取滿了就純靠記憶體 render，絕不報錯）
             if (cloudData.goodsList && Array.isArray(cloudData.goodsList)) {
                 goodsList = cloudData.goodsList;
                 try { 
                     localStorage.setItem('goodsTrackerData', JSON.stringify(goodsList)); 
                 } catch(e) {
-                    console.warn('⚠️ 手機暫存已滿，直接使用記憶體渲染雲端數據');
+                    console.warn('⚠️ 手機快取已滿，已改為使用記憶體渲染雲端數據');
                 }
             }
 
+            // 🎯 6. 重新計算與渲染
             calculateConvertedPrice();
             renderSettingsManager();
             renderFormPlatforms();
