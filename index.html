@@ -3188,27 +3188,69 @@
             }
         }
 
-        // 🎯 背景自動比對更新
         async function autoCheckAndSync() {
             if (!userSecretKey) return;
+        
             try {
+                console.log("🌐 正在連接 Supabase 讀取資料...");
+                
+                // 1. 向 Supabase 查詢對應暗號的資料
                 const { data, error } = await supabaseClient
-                    .from('user_data')
-                    .select('updated_at, data_json')
+                    .from('goods_tracker') // ⚠️ 請確認你的 Supabase Table 名稱是否叫 goods_tracker
+                    .select('*')
                     .eq('secret_key', userSecretKey)
                     .single();
-
-                if (error || !data) return;
-
-                const remoteTimestamp = new Date(data.updated_at).getTime();
-                const localTimestamp = Number(lastSyncTime);
-
-                if (remoteTimestamp > localTimestamp || !lastSyncTime) {
-                    applyCloudData(data.data_json);
-                    lastSyncTime = remoteTimestamp;
-                    try { localStorage.setItem('goodsTrackerLastSyncTime', lastSyncTime); } catch(e){}
+        
+                if (error) {
+                    console.error("❌ Supabase 讀取錯誤:", error);
+                    // 如果連線失敗，絕對不要覆蓋本地舊資料！
+                    return;
                 }
-            } catch (err) { console.error('自動比對失敗:', err); }
+        
+                if (data) {
+                    // 2. 🎯 兼容解析：無論你之前儲存的是 content、items 定 goodsList 統統解開
+                    let cloudData = null;
+                    if (data.content) {
+                        cloudData = typeof data.content === 'string' ? JSON.parse(data.content) : data.content;
+                    } else if (data.data) {
+                        cloudData = typeof data.data === 'string' ? JSON.parse(data.data) : data.data;
+                    }
+        
+                    // 3. 檢查裡面有沒有谷子清單
+                    let extractedList = null;
+                    if (Array.isArray(cloudData)) {
+                        extractedList = cloudData;
+                    } else if (cloudData && Array.isArray(cloudData.goodsList)) {
+                        extractedList = cloudData.goodsList;
+                    } else if (cloudData && Array.isArray(cloudData.items)) {
+                        extractedList = cloudData.items;
+                    }
+        
+                    // 🎯 關鍵防護：只有當雲端真的有拿到資料 (長度 > 0) 時才覆蓋！
+                    if (extractedList && extractedList.length > 0) {
+                        goodsList = extractedList;
+                        
+                        // 同步其他設定（如果有）
+                        if (cloudData.ipSettings) ipSettings = cloudData.ipSettings;
+                        if (cloudData.platformSettings) platformSettings = cloudData.platformSettings;
+                        if (cloudData.headerTitle) headerTitle = cloudData.headerTitle;
+        
+                        // 寫回 LocalStorage 備份
+                        localStorage.setItem('goodsTrackerData', JSON.stringify(goodsList));
+                        localStorage.setItem('goodsTrackerIpSettings', JSON.stringify(ipSettings));
+                        localStorage.setItem('goodsTrackerPlatformSettings', JSON.stringify(platformSettings));
+                        
+                        console.log("✅ 成功從雲端同步 " + goodsList.length + " 筆谷子資料！");
+                        
+                        // 重新印出畫面
+                        render();
+                    } else {
+                        console.warn("⚠️ 雲端資料長度為 0 或格式不匹配，保持本地資料不被覆蓋。");
+                    }
+                }
+            } catch (e) {
+                console.error("❌ autoCheckAndSync 發生異常:", e);
+            }
         }
 
         // 🎯 推送本地最新資料到雲端
