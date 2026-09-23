@@ -3510,17 +3510,20 @@
         function applyCloudData(payload) {
             if (!payload) return;
 
-            // 套用手帳標題
+            // 🎯 1. 優先讀取雲端傳過來的自訂手帳標題
             if (payload.headerTitle) {
                 headerTitle = payload.headerTitle;
+                
+                // 即時更新頂部標題列與系統設定欄位的文字
                 const mainHeader = document.getElementById('main-header');
                 const customTitleInput = document.getElementById('custom-header-title');
                 if (mainHeader) mainHeader.innerText = headerTitle;
                 if (customTitleInput) customTitleInput.value = headerTitle;
+
                 try { localStorage.setItem('goodsTrackerHeaderTitle', headerTitle); } catch(e){}
             }
 
-            // 套用匯率
+            // 🎯 2. 套用預設匯率
             if (payload.globalRate) {
                 globalRate = parseFloat(payload.globalRate);
                 const rateInput = document.getElementById('global-rate');
@@ -3528,29 +3531,29 @@
                 try { localStorage.setItem('goodsTrackerRate', globalRate); } catch(e){}
             }
 
-            // 套用 IP 分類
+            // 🎯 3. 套用 IP 分類
             if (payload.ipSettings) {
                 ipSettings = payload.ipSettings;
                 try { localStorage.setItem('goodsTrackerIpSettings', JSON.stringify(ipSettings)); } catch(e){}
             }
 
-            // 套用平台
+            // 🎯 4. 套用購買平台
             if (payload.platformSettings) {
                 platformSettings = payload.platformSettings;
                 try { localStorage.setItem('goodsTrackerPlatformSettings', JSON.stringify(platformSettings)); } catch(e){}
             }
 
-            // 套用谷子列表（手機快取滿了就純靠記憶體 render，絕不報錯）
+            // 🎯 5. 套用谷子列表（手機快取爆滿時靜默改用記憶體 render）
             if (payload.goodsList && Array.isArray(payload.goodsList)) {
                 goodsList = payload.goodsList;
                 try { 
                     localStorage.setItem('goodsTrackerData', JSON.stringify(goodsList)); 
                 } catch(e) {
-                    console.warn('⚠️ 手機本地快取已爆滿，已改為純記憶體模式渲染');
+                    console.warn('⚠️ 手機本地快取已滿，改為純記憶體模式渲染');
                 }
             }
 
-            // 即時重繪所有介面
+            // 🎯 6. 重新計算金額與刷新 UI
             calculateConvertedPrice();
             renderSettingsManager();
             renderFormPlatforms();
