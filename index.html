@@ -3469,17 +3469,15 @@
             render();
         }
 
+        // 🎯 手動按「🔄 同步」時：強制更新介面
         async function connectCloudSync() {
             const keyInput = document.getElementById('supabase-secret-key').value.trim();
             if (!keyInput) return alert('請先輸入暗號！');
 
             userSecretKey = keyInput;
-            
-            // 🎯 防爆 1：儲存暗號（失敗就忽略）
             try { localStorage.setItem('goodsTrackerSecretKey', userSecretKey); } catch(e){}
 
             try {
-                // 1. 向 Supabase 撈取雲端資料
                 const { data, error } = await supabaseClient
                     .from('user_data')
                     .select('data_json, updated_at')
@@ -3492,23 +3490,27 @@
                 }
 
                 if (data && data.data_json) {
-                    // 2. 解包並套用雲端資料
+                    // 套用雲端資料
                     applyCloudData(data.data_json);
-
-                    // 🎯 防爆 2：時間戳只存於記憶體，嘗試寫入 localStorage（失敗靜默忽略）
+                    
+                    // 🎯 關鍵：更新最後同步時間，並即時重新渲染畫面！
                     lastSyncTime = new Date(data.updated_at).getTime();
                     try { localStorage.setItem('goodsTrackerLastSyncTime', lastSyncTime); } catch(e){}
 
+                    // 強制重繪所有 UI 視元
+                    renderSettingsManager();
+                    renderFormPlatforms();
+                    renderFormIPs();
+                    render(); // 👈 重新畫出谷子列表
+
                     alert('✨ 已成功連結暗號，並為你載入雲端最新數據！');
                 } else {
-                    // 雲端無紀錄，推送到雲端
                     await pushToCloud();
                     alert('✨ 專屬暗號已建立，已將目前資料備份至雲端！');
                 }
             } catch (err) {
-                // 🎯 防爆 3：如果捕捉到的錯誤是 Quota exceeded，自動吞掉不跳 Alert！
+                // 如果是 Quota 警告則靜默處理，不跳錯誤 Alert
                 if (err && err.message && err.message.includes('quota')) {
-                    console.warn('⚠️ 捕捉到 Quota Exceeded，已自動忽略並以記憶體模式順暢運作');
                     alert('✨ 已成功連結暗號，並為你載入雲端最新數據！');
                 } else {
                     alert('⚠️ 同步發生錯誤：' + (err.message || err));
