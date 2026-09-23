@@ -3427,9 +3427,9 @@
 
 
 
-        // 🎯 1. 優先寫入雲端，手機本地滿咗自動 Ignore，絕唔卡死
+        // 🎯 1. 優先推送雲端，手機本地滿了就 Ignore，絕不報錯
         function saveData() {
-            pushToCloud(); // 優先送去 Supabase 雲端 (容量無限)
+            pushToCloud();
 
             try { 
                 localStorage.setItem('goodsTrackerData', JSON.stringify(goodsList)); 
@@ -3440,18 +3440,15 @@
             render();
         }
 
-        // 🎯 2. 修正連線/同步：加上 try-catch 確保手機點擊必有反應
+        // 🎯 2. 同步函式防爆處理
         async function connectCloudSync() {
             const keyInput = document.getElementById('supabase-secret-key').value.trim();
             if (!keyInput) return alert('請先輸入暗號！');
 
             userSecretKey = keyInput;
-            try {
-                localStorage.setItem('goodsTrackerSecretKey', userSecretKey);
-            } catch(e) {}
+            try { localStorage.setItem('goodsTrackerSecretKey', userSecretKey); } catch(e){}
 
             try {
-                // 向 Supabase 撈取雲端資料
                 const { data, error } = await supabaseClient
                     .from('user_data')
                     .select('data_json, updated_at')
@@ -3478,7 +3475,30 @@
             }
         }
 
+        // 🎯 3. 自動背景比對防爆處理
+        async function autoCheckAndSync() {
+            if (!userSecretKey) return;
+            try {
+                const { data, error } = await supabaseClient
+                    .from('user_data')
+                    .select('data_json, updated_at')
+                    .eq('secret_key', userSecretKey)
+                    .single();
 
+                if (data && data.data_json) {
+                    const cloudTime = new Date(data.updated_at).getTime();
+                    if (cloudTime > lastSyncTime) {
+                        applyCloudData(data.data_json);
+                        lastSyncTime = cloudTime;
+                        try {
+                            localStorage.setItem('goodsTrackerLastSyncTime', lastSyncTime);
+                            localStorage.setItem('goodsTrackerData', JSON.stringify(goodsList));
+                        } catch(e){}
+                        render();
+                    }
+                }
+            } catch(e) {}
+        }
 
 
         function changeSortMode(value) {
