@@ -2307,6 +2307,10 @@
             <button class="settings-btn" type="button" onclick="connectCloudSync()" style="padding: 2px 6px; font-size: 10px; height: 28px;">🔄 同步</button>
             <button class="settings-btn" type="button" onclick="changeSecretKey()" style="padding: 2px 6px; font-size: 10px; height: 28px; background: #e56b3f;">✍️ 修改</button>
             <button class="settings-btn" type="button" onclick="disconnectCloudSync()" style="padding: 2px 6px; font-size: 10px; height: 28px; background: #8c7e81;">🔌 斷開</button>
+            <!-- 🧹 一鍵清理本地快取按鈕 -->
+            <button onclick="forceClearLocalStorage()" style="background-color: #e74c3c; color: white; width: 100%; padding: 10px; border: none; border-radius: 8px; font-weight: bold; margin-top: 10px;">
+                🧹 徹底清空手機快取空間
+            </button>
         </div>
         
         <div id="sync-status-tip" style="font-size: 10px; color: var(--primary-color); margin-bottom: 12px; padding-left: 2px;">
@@ -2649,6 +2653,19 @@
                 }
             };
         })();
+
+        // 🧹 徹底清空手機本地 LocalStorage 暫存
+        function forceClearLocalStorage() {
+            if (confirm("⚠️ 確定要徹底清空手機本地快取嗎？\n\n這會釋放手機 5MB 空間，不會刪除 Supabase 雲端資料。")) {
+                try {
+                    localStorage.clear();
+                    alert("✨ 手機本地快取已徹底清空！請重新輸入暗號同步雲端。");
+                    location.reload(); // 重新載入頁面
+                } catch (e) {
+                    alert("清理失敗：" + e.message);
+                }
+            }
+        }
 
       // 🌐 Supabase 雲端設定
         const SUPABASE_URL = "https://knmqsvsnccftshmcijxk.supabase.co";
